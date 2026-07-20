@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2026.07.20.3
+
 - Keep provider form values intact while Test Connection, Sync Now, Cleanup All,
   and container actions refresh status data.
 - Reload the canonical persisted provider settings after a successful save.

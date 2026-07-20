@@ -10,6 +10,9 @@
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/docker.dns.settings" pluginURL="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/docker.dns.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues" project="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin" readme="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin#readme">
 <CHANGES>
+###2026.07.20.3
+- Preserved provider form edits during status refreshes and after saving
+
 ###2026.07.20.2
 - Fixed requests being rejected by Unraid CSRF validation
 

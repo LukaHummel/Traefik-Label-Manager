@@ -20,6 +20,7 @@ if find . -path './node_modules' -prune -o -path './vendor' -prune -o -type d -n
   exit 1
 fi
 grep -Eq '<MD5>[0-9a-f]{32}</MD5>' docker.dns.plg
+grep -F -q '**Docker DNS**' source/docker.dns/README.md
 grep -F -q 'sleep 3' source/docker.dns/scripts/watch.sh
 grep -F -q 'flock(' source/docker.dns/include/SyncEngine.php
 

@@ -51,14 +51,16 @@ describe('responsive container list', () => {
   beforeEach(() => {
     document.body.innerHTML = `
       <div id="docker-dns-settings">
-        <select id="docker-dns-enabled"><option value="true">Yes</option></select>
-        <select id="docker-dns-provider"><option value="adguard">AdGuard</option></select>
-        <input id="docker-dns-base-url"><input id="docker-dns-username"><input id="docker-dns-password">
-        <select id="docker-dns-verify-tls"><option value="true">Yes</option></select>
-        <input id="docker-dns-host-ip"><input id="docker-dns-timeout">
-        <div id="docker-dns-username-row"></div>
-        <button id="docker-dns-save-settings"></button><button id="docker-dns-test"></button>
-        <button id="docker-dns-sync"></button><button id="docker-dns-cleanup"></button>
+        <form id="docker-dns-provider-form">
+          <select id="docker-dns-enabled"><option value="true">Yes</option></select>
+          <select id="docker-dns-provider"><option value="adguard">AdGuard</option></select>
+          <input id="docker-dns-base-url"><input id="docker-dns-username"><input id="docker-dns-password">
+          <select id="docker-dns-verify-tls"><option value="true">Yes</option></select>
+          <input id="docker-dns-host-ip"><input id="docker-dns-timeout">
+          <div id="docker-dns-username-row"></div>
+          <button type="button" id="docker-dns-save-settings"></button><button type="button" id="docker-dns-test"></button>
+          <button type="button" id="docker-dns-sync"></button><button type="button" id="docker-dns-cleanup"></button>
+        </form>
         <div id="docker-dns-status"></div><span id="docker-dns-container-count"></span>
         <div id="docker-dns-containers"></div>
       </div>`;
@@ -102,5 +104,41 @@ describe('responsive container list', () => {
       csrf_token: 'token',
       docker_dns_csrf_token: 'token',
     });
+  });
+
+  it('does not reset edited provider settings when an action refreshes status', async () => {
+    window.eval(source);
+    await vi.waitFor(() => expect(document.getElementById('docker-dns-base-url').value).toBe('http://adguard.local'));
+
+    const baseUrl = document.getElementById('docker-dns-base-url');
+    baseUrl.value = 'http://new-adguard.local';
+    baseUrl.dispatchEvent(new Event('input', {bubbles: true}));
+    document.getElementById('docker-dns-sync').click();
+
+    await vi.waitFor(() => expect(window.fetch.mock.calls.filter(call => call[1] && call[1].method === 'POST')).toHaveLength(1));
+    await vi.waitFor(() => expect(window.fetch.mock.calls).toHaveLength(3));
+    expect(baseUrl.value).toBe('http://new-adguard.local');
+  });
+
+  it('renders the settings returned by a successful save', async () => {
+    window.fetch = vi.fn((_url, options) => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(options && options.method === 'POST'
+        ? {ok: true, status: {
+          ...statusResponse,
+          settings: {...statusResponse.settings, base_url: 'http://saved-adguard.local'},
+        }}
+        : statusResponse),
+    }));
+    window.eval(source);
+    await vi.waitFor(() => expect(document.getElementById('docker-dns-base-url').value).toBe('http://adguard.local'));
+
+    const baseUrl = document.getElementById('docker-dns-base-url');
+    baseUrl.value = 'http://saved-adguard.local';
+    baseUrl.dispatchEvent(new Event('input', {bubbles: true}));
+    document.getElementById('docker-dns-save-settings').click();
+
+    await vi.waitFor(() => expect(window.fetch.mock.calls).toHaveLength(3));
+    expect(baseUrl.value).toBe('http://saved-adguard.local');
   });
 });

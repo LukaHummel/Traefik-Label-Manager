@@ -3,6 +3,7 @@
 
   var API = '/plugins/docker.dns/include/Api.php';
   var MARKER = '__dockerDnsWrapped';
+  var HOST_ADAPTER_MARKER = '__fvplusHostAdapterHook';
   var urlMap = Object.create(null);
   var warningSent = false;
   var startedAt = Date.now();
@@ -82,6 +83,19 @@
     return clone;
   }
 
+  function preserveHostAdapterMetadata(original, wrapped) {
+    var descriptor;
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(original, HOST_ADAPTER_MARKER);
+    } catch (error) {
+      return;
+    }
+    if (!descriptor) return;
+    try {
+      Object.defineProperty(wrapped, HOST_ADAPTER_MARKER, descriptor);
+    } catch (error) {}
+  }
+
   function installWrapper() {
     if (typeof window.addDockerContainerContext !== 'function' ||
         !window.context || typeof window.context.attach !== 'function') return false;
@@ -114,6 +128,11 @@
     }
     wrapped[MARKER] = true;
     wrapped.__dockerDnsOriginal = original;
+    // FolderView Plus may inspect and rebind this hook after Docker DNS loads.
+    // Preserve its ownership metadata so it does not capture this wrapper as a
+    // new original and create a recursive FolderView -> Docker DNS -> FolderView
+    // call chain.
+    preserveHostAdapterMetadata(original, wrapped);
     window.addDockerContainerContext = wrapped;
     try {
       if (window.sessionStorage.getItem('dockerDnsCompatibilityCleared') !== '2026.07.20') {

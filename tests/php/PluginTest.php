@@ -144,6 +144,46 @@ final class PluginTest extends TestCase
         }
     }
 
+    public function testProviderSettingsAreReturnedAfterSaving(): void
+    {
+        $directory = sys_get_temp_dir() . '/docker-dns-test-' . bin2hex(random_bytes(6));
+        mkdir($directory, 0700, true);
+        putenv('DOCKER_DNS_CSRF_TOKEN=expected');
+        try {
+            $config = new Config(new JsonStore($directory));
+            $discovery = new DockerDiscovery(static fn(string $command): string => '');
+            $controller = new ApiController($config, new SyncEngine($config, $discovery, new ProviderFactory()));
+            $result = $controller->post([
+                'action' => 'save-settings',
+                'docker_dns_csrf_token' => 'expected',
+                'enabled' => 'true',
+                'provider' => 'pihole',
+                'base_url' => 'https://pihole.local/',
+                'username' => '',
+                'password' => 'secret',
+                'verify_tls' => 'false',
+                'host_ipv4_override' => '192.168.1.20',
+                'timeout_seconds' => '25',
+            ]);
+
+            self::assertSame([
+                'schema' => 1,
+                'enabled' => true,
+                'provider' => 'pihole',
+                'base_url' => 'https://pihole.local',
+                'verify_tls' => false,
+                'timeout_seconds' => 25,
+                'host_ipv4_override' => '192.168.1.20',
+            ], $result['status']['settings']);
+            self::assertSame($result['status']['settings'], $controller->get('status', [])['settings']);
+            self::assertTrue($result['status']['credentials']['password_set']);
+        } finally {
+            putenv('DOCKER_DNS_CSRF_TOKEN');
+            foreach (glob($directory . '/*') ?: [] as $file) unlink($file);
+            rmdir($directory);
+        }
+    }
+
     /** @return array<string,mixed> */
     private function inspect(string $name, string $network, string $ip): array
     {

@@ -7,6 +7,8 @@
   var list = document.getElementById('docker-dns-containers');
   var count = document.getElementById('docker-dns-container-count');
   var status = document.getElementById('docker-dns-status');
+  var providerForm = document.getElementById('docker-dns-provider-form');
+  var settingsDirty = false;
 
   function csrf() { return typeof window.csrf_token === 'string' ? window.csrf_token : ''; }
   function escapeHtml(value) {
@@ -67,7 +69,7 @@
     return '<a href="' + safeAttribute + '" target="_blank" rel="noopener" title="' + safeAttribute + '">' +
       safeUrl + '<span class="docker-dns-external" aria-hidden="true">↗</span></a>';
   }
-  function render(data) {
+  function renderSettings(data) {
     var settings = data.settings;
     document.getElementById('docker-dns-enabled').value = String(!!settings.enabled);
     document.getElementById('docker-dns-provider').value = settings.provider;
@@ -79,6 +81,9 @@
     document.getElementById('docker-dns-host-ip').value = settings.host_ipv4_override || '';
     document.getElementById('docker-dns-timeout').value = settings.timeout_seconds || 10;
     toggleProvider();
+  }
+  function render(data, includeSettings) {
+    if (includeSettings && !settingsDirty) renderSettings(data);
     var state = data.state;
     var summary = 'Last sync: ' + (state.last_sync || 'never') + '\nLast success: ' + (state.last_success || 'never');
     if (state.last_error) summary += '\nError: ' + state.last_error;
@@ -124,27 +129,33 @@
       '</article>';
     }).join('');
   }
-  function load() {
+  function load(includeSettings) {
     return window.fetch(API + '?action=status', {credentials: 'same-origin', cache: 'no-store'})
       .then(function (response) { return response.json(); })
-      .then(function (data) { if (data.ok === false) throw new Error(data.error); render(data); })
+      .then(function (data) { if (data.ok === false) throw new Error(data.error); render(data, !!includeSettings); })
       .catch(function (error) { message(error.message, true); });
   }
-  function perform(payload, success) {
+  function perform(payload, success, savesSettings) {
     setBusy(true);
     message('Working…', false);
-    return api(payload).then(function () {
+    return api(payload).then(function (result) {
       message(success, false);
       document.dispatchEvent(new CustomEvent('docker-dns:url-saved'));
-      return load();
+      if (savesSettings) {
+        settingsDirty = false;
+        if (result.status) renderSettings(result.status);
+      }
+      return load(savesSettings && !result.status);
     }).catch(function (error) { message(error.message, true); }).finally(function () { setBusy(false); });
   }
   function toggleProvider() {
     document.getElementById('docker-dns-username-row').style.display =
       document.getElementById('docker-dns-provider').value === 'adguard' ? '' : 'none';
   }
+  providerForm.addEventListener('input', function () { settingsDirty = true; });
+  providerForm.addEventListener('change', function () { settingsDirty = true; });
   document.getElementById('docker-dns-provider').addEventListener('change', toggleProvider);
-  document.getElementById('docker-dns-save-settings').addEventListener('click', function () { perform(providerPayload('save-settings'), 'Settings saved.'); });
+  document.getElementById('docker-dns-save-settings').addEventListener('click', function () { perform(providerPayload('save-settings'), 'Settings saved.', true); });
   document.getElementById('docker-dns-test').addEventListener('click', function () { perform(providerPayload('test-connection'), 'Connection succeeded.'); });
   document.getElementById('docker-dns-sync').addEventListener('click', function () { perform({action: 'sync-now'}, 'Synchronization completed.'); });
   document.getElementById('docker-dns-cleanup').addEventListener('click', function () {
@@ -158,5 +169,5 @@
       target_ipv4_override: row.querySelector('.docker-dns-ip').value,
       url_override: row.querySelector('.docker-dns-override').value}, 'Container settings saved.');
   });
-  load();
+  load(true);
 })(window, document);

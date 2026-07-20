@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Keep provider form values intact while Test Connection, Sync Now, Cleanup All,
+  and container actions refresh status data.
+- Reload the canonical persisted provider settings after a successful save.
+
 ## 2026.07.20.2
 
 - Fixed Unraid CSRF validation for Test Connection, settings, synchronization,

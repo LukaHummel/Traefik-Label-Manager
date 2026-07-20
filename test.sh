@@ -11,7 +11,7 @@ node --check source/docker.dns/javascript/docker-dns-settings.js
 if [[ -d node_modules ]]; then npm run php:parse; fi
 xmllint --noout ca_profile.xml plugins/docker-dns.xml icon.svg source/docker.dns/icons/icon.svg docker.dns.plg phpunit.xml
 
-if rg -n 'dockerMan/templates|templates-user' source; then
+if grep -R -n -E 'dockerMan/templates|templates-user' source; then
   echo 'Forbidden Docker template path found in runtime source.' >&2
   exit 1
 fi
@@ -20,8 +20,8 @@ if find . -path './node_modules' -prune -o -path './vendor' -prune -o -type d -n
   exit 1
 fi
 grep -Eq '<MD5>[0-9a-f]{32}</MD5>' docker.dns.plg
-rg -q 'sleep 3' source/docker.dns/scripts/watch.sh
-rg -q 'flock\(' source/docker.dns/include/SyncEngine.php
+grep -F -q 'sleep 3' source/docker.dns/scripts/watch.sh
+grep -F -q 'flock(' source/docker.dns/include/SyncEngine.php
 
 if command -v shellcheck >/dev/null 2>&1; then
   {

@@ -6,9 +6,9 @@
 <!ENTITY build "1">
 <!ENTITY package "&name;-&version;-noarch-&build;.txz">
 <!ENTITY pluginDir "/boot/config/plugins/&name;">
-<!ENTITY packageUrl "https://github.com/luka-codefortynine/UnraidDockerDNSPlugin/releases/download/v&version;/&package;">
+<!ENTITY packageUrl "https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/download/v&version;/&package;">
 ]>
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/docker.dns.settings" pluginURL="https://raw.githubusercontent.com/luka-codefortynine/UnraidDockerDNSPlugin/main/docker.dns.plg" icon="globe" min="7.0" support="https://github.com/luka-codefortynine/UnraidDockerDNSPlugin/issues" project="https://github.com/luka-codefortynine/UnraidDockerDNSPlugin" readme="https://github.com/luka-codefortynine/UnraidDockerDNSPlugin#readme">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/docker.dns.settings" pluginURL="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/docker.dns.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues" project="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin" readme="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin#readme">
 <CHANGES>
 ###2026.07.20
 - Initial beta release
@@ -33,4 +33,3 @@ rm -rf '&pluginDir;'
 </INLINE>
 </FILE>
 </PLUGIN>
-

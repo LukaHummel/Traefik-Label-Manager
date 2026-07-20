@@ -2,15 +2,14 @@
 <Plugin>
   <Name>Docker DNS</Name>
   <Overview>Publishes Docker container names below home.arpa through AdGuard Home or Pi-hole and adds a separate Docker DNS WebUI context-menu link.</Overview>
-  <PluginURL>https://raw.githubusercontent.com/luka-codefortynine/UnraidDockerDNSPlugin/main/docker.dns.plg</PluginURL>
+  <PluginURL>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/docker.dns.plg</PluginURL>
   <PluginAuthor>Luka Hummel</PluginAuthor>
-  <Support>https://github.com/luka-codefortynine/UnraidDockerDNSPlugin/issues</Support>
-  <Project>https://github.com/luka-codefortynine/UnraidDockerDNSPlugin</Project>
-  <ReadMe>https://raw.githubusercontent.com/luka-codefortynine/UnraidDockerDNSPlugin/main/README.md</ReadMe>
+  <Support>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues</Support>
+  <Project>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin</Project>
+  <ReadMe>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/README.md</ReadMe>
   <Category>Tools:System</Category>
   <Beta>true</Beta>
   <MinVer>7.0</MinVer>
-  <Icon>https://raw.githubusercontent.com/luka-codefortynine/UnraidDockerDNSPlugin/main/icon.svg</Icon>
+  <Icon>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/icon.svg</Icon>
   <License>GPLv2</License>
 </Plugin>
-

@@ -15,11 +15,10 @@ docker.dns:
 docker.dns: Publish Docker container names to AdGuard Home or Pi-hole.
 docker.dns: Adds plugin-owned WebUI links without changing Docker templates.
 docker.dns:
-docker.dns: https://github.com/luka-codefortynine/UnraidDockerDNSPlugin
+docker.dns: https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin
 docker.dns:
 docker.dns:
 docker.dns:
 EOF
 cd "$stage"
 makepkg -l y -c y "/work/dist/docker.dns-${PKG_VERSION}-noarch-${PKG_BUILD}.txz" <<<'y'
-

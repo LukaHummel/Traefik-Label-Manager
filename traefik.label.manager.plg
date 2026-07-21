@@ -2,14 +2,20 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "traefik.label.manager">
 <!ENTITY author "Luka Hummel">
-<!ENTITY version "2026.07.21.2">
+<!ENTITY version "2026.07.21.3">
 <!ENTITY build "1">
 <!ENTITY package "&name;-&version;-noarch-&build;.txz">
 <!ENTITY pluginDir "/boot/config/plugins/&name;">
-<!ENTITY packageUrl "https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/download/v&version;/&package;">
+<!ENTITY packageUrl "https://github.com/LukaHummel/Traefik-Label-Manager/releases/download/v&version;/&package;">
 ]>
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/traefik.label.manager.settings" pluginURL="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/traefik.label.manager.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues" project="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin" readme="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin#readme">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/traefik.label.manager.settings" pluginURL="https://github.com/LukaHummel/Traefik-Label-Manager/releases/latest/download/traefik.label.manager.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Traefik-Label-Manager/issues" project="https://github.com/LukaHummel/Traefik-Label-Manager" readme="https://github.com/LukaHummel/Traefik-Label-Manager#readme">
 <CHANGES>
+###2026.07.21.3
+- Made container label editors expandable and collapsed by default
+- Made template value fields compact, full-width, and auto-growing
+- Pinned containers using a Traefik image or name above other containers
+- Removed obsolete identity cleanup and repository metadata
+
 ###2026.07.21.2
 - Renamed the plugin to Traefik Label Manager
 - Added a Network Services page for viewing and editing Traefik labels
@@ -20,19 +26,9 @@
 - Added editable home.arpa hostnames and published backend-port selection
 - Preserved manual labels through plugin-owned routing metadata
 </CHANGES>
-<FILE Run="/bin/bash">
-<INLINE>
-if [ -d /usr/local/emhttp/plugins/docker.dns ] || [ -d /boot/config/plugins/docker.dns ]; then
-  removepkg docker.dns 2>/dev/null || true
-  rm -rf /usr/local/emhttp/plugins/docker.dns
-  rm -rf /boot/config/plugins/docker.dns
-fi
-rm -f /boot/config/plugins/docker.dns.plg
-</INLINE>
-</FILE>
 <FILE Name="&pluginDir;/&package;" Run="upgradepkg --install-new">
   <URL>&packageUrl;</URL>
-  <MD5>6782e5aeefdc749600df4776f00d91fc</MD5>
+  <MD5>1eb3191f5ca91a1fe9e51d7fd3bc83a8</MD5>
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>

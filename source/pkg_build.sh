@@ -14,7 +14,7 @@ traefik.label.manager:
 traefik.label.manager: View and edit Traefik labels for Unraid containers.
 traefik.label.manager: Saves labels in Unraid templates and applies them on demand.
 traefik.label.manager:
-traefik.label.manager: https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin
+traefik.label.manager: https://github.com/LukaHummel/Traefik-Label-Manager
 traefik.label.manager:
 traefik.label.manager:
 traefik.label.manager:

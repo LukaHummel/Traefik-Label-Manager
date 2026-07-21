@@ -20,11 +20,11 @@ verify the hostname and backend port, and click **Apply**.
 
 Open **Settings → Network Services → Traefik Label Manager** to compare the
 labels saved in each Unraid template with the labels active on its current
-container. The editor accepts only `traefik.*` and Traefik Label Manager
-ownership labels.
+container. Traefik containers are pinned to the top. The editor accepts only
+`traefik.*` and Traefik Label Manager ownership labels.
 
 Use **Save Template** for a non-disruptive template update. Use **Apply &
 Restart** to save and invoke Unraid's container updater so the labels become
 active. A normal Docker restart does not change container labels.
 
-Full documentation: https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin#readme
+Full documentation: https://github.com/LukaHummel/Traefik-Label-Manager#readme

@@ -45,6 +45,35 @@ describe('Traefik Label Manager settings page', () => {
     expect(document.querySelectorAll('.tlm-container-card')[1].querySelector('.tlm-label-key').disabled).toBe(true);
   });
 
+  it('identifies a pinned Traefik container in its summary', async () => {
+    await load([container({name: 'edge', is_traefik: true, pending: false})]);
+    expect(document.querySelector('.tlm-container-header').textContent).toContain('Traefik');
+  });
+
+  it('renders containers as compact collapsed sections', async () => {
+    const card = await load();
+    expect(card.tagName).toBe('DETAILS');
+    expect(card.open).toBe(false);
+    expect(card.querySelector('summary').textContent).toContain('1 label');
+    card.open = true;
+    card.dispatchEvent(new Event('toggle'));
+    expect(card.querySelector('.tlm-container-content')).not.toBeNull();
+    window.fetch.mockImplementationOnce(() => response({ok: true, containers: [container()]}));
+    document.getElementById('tlm-refresh').click();
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+    expect(document.querySelector('.tlm-container-card').open).toBe(true);
+  });
+
+  it('starts template values at one row and grows them with their content', async () => {
+    const card = await load();
+    const value = card.querySelector('.tlm-label-value');
+    expect(value.rows).toBe(1);
+    Object.defineProperty(value, 'scrollHeight', {configurable: true, value: 96});
+    value.dispatchEvent(new Event('input'));
+    expect(value.style.height).toBe('96px');
+    expect(value.style.overflowY).toBe('hidden');
+  });
+
   it('saves only the edited Traefik labels and CSRF token', async () => {
     const card = await load();
     window.fetch.mockImplementationOnce(() => response({ok: true, container: 'plex', labels: {}}));

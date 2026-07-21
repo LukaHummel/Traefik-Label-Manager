@@ -35,11 +35,11 @@ XML;
 file_put_contents($template, $xml);
 
 $runner = static function (array $arguments): string {
-    if ($arguments === ['ps', '-a', '--format', '{{.Names}}']) return "database\nplex";
+    if ($arguments === ['ps', '-a', '--format', '{{.Names}}']) return "database\nplex\nedge\ntraefik-lab";
     if ($arguments === ['inspect', '--', 'plex']) {
         return json_encode([[
             'State' => ['Running' => true, 'Status' => 'running'],
-            'Config' => ['Labels' => [
+            'Config' => ['Image' => 'example/plex', 'Labels' => [
                 'manual.label' => 'keep',
                 'traefik.enable' => 'true',
                 'traefik.http.routers.plex.rule' => 'Host(`active.home.arpa`)',
@@ -49,7 +49,19 @@ $runner = static function (array $arguments): string {
     if ($arguments === ['inspect', '--', 'database']) {
         return json_encode([[
             'State' => ['Running' => false, 'Status' => 'exited'],
-            'Config' => ['Labels' => ['traefik.enable' => 'false']],
+            'Config' => ['Image' => 'postgres:17', 'Labels' => ['traefik.enable' => 'false']],
+        ]], JSON_THROW_ON_ERROR);
+    }
+    if ($arguments === ['inspect', '--', 'edge']) {
+        return json_encode([[
+            'State' => ['Running' => true, 'Status' => 'running'],
+            'Config' => ['Image' => 'docker.io/library/traefik:v3.4', 'Labels' => []],
+        ]], JSON_THROW_ON_ERROR);
+    }
+    if ($arguments === ['inspect', '--', 'traefik-lab']) {
+        return json_encode([[
+            'State' => ['Running' => false, 'Status' => 'exited'],
+            'Config' => ['Image' => 'example/custom-proxy:latest', 'Labels' => []],
         ]], JSON_THROW_ON_ERROR);
     }
     throw new RuntimeException('Unexpected Docker arguments: ' . implode(' ', $arguments));
@@ -57,10 +69,11 @@ $runner = static function (array $arguments): string {
 
 $manager = new LabelManager($directory, $lock, $runner);
 $containers = $manager->containers();
-assert_same(['database', 'plex'], array_column($containers, 'name'), 'Containers must be sorted and include containers without templates.');
+assert_same(['edge', 'traefik-lab', 'database', 'plex'], array_column($containers, 'name'), 'Traefik containers must be pinned before other alphabetically sorted containers.');
+assert_same([true, true, false, false], array_column($containers, 'is_traefik'), 'Traefik detection must support image and container names.');
 assert_same(false, $containers[0]['template_found'], 'A container without an Unraid template must be read-only.');
-assert_same(true, $containers[1]['pending'], 'Template and active label differences must be pending.');
-assert_same(2, count($containers[1]['labels']), 'Only Traefik labels must be returned.');
+assert_same(true, $containers[3]['pending'], 'Template and active label differences must be pending.');
+assert_same(2, count($containers[3]['labels']), 'Only Traefik labels must be returned.');
 
 $router = 'tlm-plex-1234abcd';
 $manager->save('plex', [

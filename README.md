@@ -42,7 +42,7 @@ Add a wildcard rewrite to the DNS server used by local clients:
 Install the plugin from Community Applications or use the latest manifest:
 
 ```text
-https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/traefik.label.manager.plg
+https://github.com/LukaHummel/Traefik-Label-Manager/releases/latest/download/traefik.label.manager.plg
 ```
 
 ## Container form
@@ -62,7 +62,8 @@ retaining unrelated Docker and Traefik configuration.
 ## Network Services page
 
 Open **Settings → Network Services → Traefik Label Manager** to see every Docker
-container. Each container shows:
+container. Containers using a Traefik image, or with `traefik` in their name,
+are pinned above the alphabetically sorted remainder. Each container shows:
 
 - Traefik and ownership labels saved in its Unraid template.
 - The corresponding labels active on the current Docker container.
@@ -90,7 +91,7 @@ Containers without an Unraid user template are shown read-only.
 ```bash
 npm ci
 ./test.sh
-./build.sh 2026.07.21.2 1
+./build.sh 2026.07.21.3 1
 ```
 
 Build output is written to `dist/`. Building requires Docker because the TXZ is

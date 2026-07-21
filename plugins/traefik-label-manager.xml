@@ -2,14 +2,14 @@
 <Plugin>
   <Name>Traefik Label Manager</Name>
   <Overview>View and edit Traefik Docker labels for every Unraid container under Settings and Network Services. Configure Traefik v2 or v3 with the standalone Docker provider, exposedByDefault=false, useBindPortIP=true, and appropriately secured Docker API access. Point *.home.arpa at Traefik in your DNS server. Enable a route from a container's Add/Update form, or compare and edit saved versus active labels on the settings page. Save Template is non-disruptive; Apply &amp; Restart recreates the container through Unraid so label changes become active. Entrypoints, HTTPS, certificates, DNS, Traefik, and container lifecycle policy remain user-managed.</Overview>
-  <PluginURL>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/traefik.label.manager.plg</PluginURL>
+  <PluginURL>https://github.com/LukaHummel/Traefik-Label-Manager/releases/latest/download/traefik.label.manager.plg</PluginURL>
   <PluginAuthor>Luka Hummel</PluginAuthor>
-  <Support>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues</Support>
-  <Project>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin</Project>
-  <ReadMe>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/README.md</ReadMe>
+  <Support>https://github.com/LukaHummel/Traefik-Label-Manager/issues</Support>
+  <Project>https://github.com/LukaHummel/Traefik-Label-Manager</Project>
+  <ReadMe>https://raw.githubusercontent.com/LukaHummel/Traefik-Label-Manager/main/README.md</ReadMe>
   <Category>Tools:System</Category>
   <Beta>true</Beta>
   <MinVer>7.0</MinVer>
-  <Icon>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/icon.svg</Icon>
-  <License>GPLv2</License>
+  <Icon>https://raw.githubusercontent.com/LukaHummel/Traefik-Label-Manager/main/icon.svg</Icon>
+  <License>MIT</License>
 </Plugin>

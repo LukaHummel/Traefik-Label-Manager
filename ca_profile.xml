@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CommunityApplications>
   <Profile>Traefik Label Manager displays and edits Traefik Docker labels for every Unraid container. Configure Traefik's Docker provider with exposedByDefault=false and useBindPortIP=true, point *.home.arpa at Traefik, then opt containers in from their Add/Update forms. Save templates without interruption or recreate containers on demand through Unraid's updater.</Profile>
-  <Icon>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/icon.svg</Icon>
-  <WebPage>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin</WebPage>
-  <Forum>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues</Forum>
+  <Icon>https://raw.githubusercontent.com/LukaHummel/Traefik-Label-Manager/main/icon.svg</Icon>
+  <WebPage>https://github.com/LukaHummel/Traefik-Label-Manager</WebPage>
+  <Forum>https://github.com/LukaHummel/Traefik-Label-Manager/issues</Forum>
 </CommunityApplications>

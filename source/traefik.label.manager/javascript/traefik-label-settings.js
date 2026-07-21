@@ -7,6 +7,7 @@
   var modal = document.getElementById('tlm-update-modal');
   var frame = document.getElementById('tlm-update-frame');
   var modalTitle = document.getElementById('tlm-update-title');
+  var expandedContainers = {};
 
   function element(tag, className, text) {
     var node = document.createElement(tag);
@@ -36,6 +37,17 @@
       key === 'io.github.lukahummel.traefik-label-manager.owns-enable';
   }
 
+  function resizeValue(value) {
+    value.style.height = 'auto';
+    var height = Math.min(Math.max(value.scrollHeight, 34), 160);
+    value.style.height = height + 'px';
+    value.style.overflowY = value.scrollHeight > 160 ? 'auto' : 'hidden';
+  }
+
+  function resizeValues(scope) {
+    scope.querySelectorAll('.tlm-label-value').forEach(resizeValue);
+  }
+
   function addLabelRow(tableBody, label, editable) {
     var row = element('tr', label && label.pending ? 'tlm-label-pending' : '');
     var keyCell = element('td');
@@ -48,9 +60,10 @@
 
     var templateCell = element('td');
     var value = element('textarea', 'tlm-label-value');
-    value.rows = 2;
+    value.rows = 1;
     value.value = label ? (label.template_value === null ? (label.active_value || '') : label.template_value) : '';
     value.disabled = !editable;
+    value.addEventListener('input', function () { resizeValue(value); });
     templateCell.appendChild(value);
 
     var activeCell = element('td', 'tlm-active-value');
@@ -131,16 +144,24 @@
   }
 
   function renderContainer(container) {
-    var card = element('article', 'tlm-container-card');
+    var card = element('details', 'tlm-container-card');
     card.dataset.container = container.name;
-    var header = element('div', 'tlm-container-header');
+    card.open = !!expandedContainers[container.name];
+    card.addEventListener('toggle', function () {
+      expandedContainers[container.name] = card.open;
+      if (card.open) resizeValues(card);
+    });
+    var header = element('summary', 'tlm-container-header');
     var heading = element('div');
     heading.appendChild(element('h3', '', container.name));
     heading.appendChild(element('span', 'tlm-container-state', container.status));
+    heading.appendChild(element('span', 'tlm-label-count', container.labels.length + (container.labels.length === 1 ? ' label' : ' labels')));
+    if (container.is_traefik) heading.appendChild(element('span', 'tlm-badge tlm-badge-traefik', 'Traefik'));
     if (container.pending) heading.appendChild(element('span', 'tlm-badge tlm-badge-pending', 'Template pending'));
     header.appendChild(heading);
     if (!container.template_found) header.appendChild(element('span', 'tlm-template-missing', 'No Unraid template found'));
     card.appendChild(header);
+    var content = element('div', 'tlm-container-content');
 
     var tableWrap = element('div', 'tlm-table-wrap');
     var table = element('table', 'tlm-label-table');
@@ -153,7 +174,7 @@
     container.labels.forEach(function (label) { addLabelRow(body, label, container.template_found); });
     table.appendChild(body);
     tableWrap.appendChild(table);
-    card.appendChild(tableWrap);
+    content.appendChild(tableWrap);
 
     var actions = element('div', 'tlm-container-actions');
     var add = element('button', '', 'Add label');
@@ -174,7 +195,8 @@
       });
     });
     [add, save, apply].forEach(function (button) { actions.appendChild(button); });
-    card.appendChild(actions);
+    content.appendChild(actions);
+    card.appendChild(content);
     return card;
   }
 
@@ -204,5 +226,6 @@
     modal.hidden = true;
     load();
   });
+  window.addEventListener('resize', function () { resizeValues(document); });
   load();
 })(window, document);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.07.21.3
+
+- Make each container editor expandable and collapsed by default.
+- Preserve expanded containers while refreshing saved data.
+- Make template value fields compact, full-width, and auto-growing.
+- Pin containers using a Traefik image or name above other containers.
+- Remove the obsolete identity cleanup and rename repository metadata.
+
 ## 2026.07.21.2
 
 - Rename the plugin and package to Traefik Label Manager.

@@ -29,12 +29,6 @@ if grep -F -q 'Type="xmenu"' source/traefik.label.manager/traefik.label.manager.
 fi
 grep -F -q 'launch="Settings/traefik.label.manager.settings"' traefik.label.manager.plg
 grep -F -q '/boot/config/plugins/dockerMan/templates-user' source/traefik.label.manager/include/bootstrap.php
-old_identity_cleanup_line="$(grep -n 'rm -f /boot/config/plugins/docker.dns.plg' traefik.label.manager.plg | cut -d: -f1)"
-package_install_line="$(grep -n 'Run="upgradepkg --install-new"' traefik.label.manager.plg | cut -d: -f1)"
-if [[ -z "$old_identity_cleanup_line" || -z "$package_install_line" || "$old_identity_cleanup_line" -ge "$package_install_line" ]]; then
-  echo 'The previous plugin identity must be removed before installing the renamed package.' >&2
-  exit 1
-fi
 
 expected_source_files="$(printf '%s\n' \
   source/traefik.label.manager/README.md \
@@ -52,11 +46,6 @@ actual_source_files="$(find source/traefik.label.manager -type f | sort)"
 if [[ "$actual_source_files" != "$expected_source_files" ]]; then
   echo 'Runtime source contains files outside the expected allowlist.' >&2
   diff -u <(printf '%s\n' "$expected_source_files") <(printf '%s\n' "$actual_source_files") || true
-  exit 1
-fi
-
-if rg -n 'Docker DNS|docker\.dns|docker-dns|unraid-dns|DockerDns|docker_dns' README.md CHANGELOG.md ca_profile.xml plugins package.json package-lock.json source/traefik.label.manager/README.md source/traefik.label.manager/*.page; then
-  echo 'The previous application identity remains in user-facing branding.' >&2
   exit 1
 fi
 

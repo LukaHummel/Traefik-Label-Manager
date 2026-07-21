@@ -51,6 +51,7 @@ final class LabelManager
                 continue;
             }
             $inspect = is_array($decoded[0] ?? null) ? $decoded[0] : [];
+            $isTraefik = $this->isTraefikContainer($name, $inspect);
             $active = $this->filterLabels((array)($inspect['Config']['Labels'] ?? []));
             $templatePath = $templates[$name] ?? null;
             $template = $templatePath !== null ? $this->readTemplateLabels($templatePath) : [];
@@ -71,13 +72,29 @@ final class LabelManager
                 'name' => $name,
                 'running' => (bool)($inspect['State']['Running'] ?? false),
                 'status' => (string)($inspect['State']['Status'] ?? 'unknown'),
+                'is_traefik' => $isTraefik,
                 'template_found' => $templatePath !== null,
                 'pending' => $templatePath !== null && $template !== $active,
                 'labels' => $labels,
             ];
         }
-        usort($result, static fn(array $left, array $right): int => strcasecmp((string)$left['name'], (string)$right['name']));
+        usort($result, static function (array $left, array $right): int {
+            $traefikOrder = (int)$right['is_traefik'] <=> (int)$left['is_traefik'];
+            return $traefikOrder !== 0 ? $traefikOrder : strcasecmp((string)$left['name'], (string)$right['name']);
+        });
         return $result;
+    }
+
+    /** @param array<string,mixed> $inspect */
+    private function isTraefikContainer(string $name, array $inspect): bool
+    {
+        $image = strtolower((string)($inspect['Config']['Image'] ?? ''));
+        $image = explode('@', $image, 2)[0];
+        $slash = strrpos($image, '/');
+        $basename = $slash === false ? $image : substr($image, $slash + 1);
+        $basename = explode(':', $basename, 2)[0];
+        if (str_contains($basename, 'traefik')) return true;
+        return stripos($name, 'traefik') !== false;
     }
 
     /** @param list<array{key:mixed,value:mixed}> $labels @return array<string,mixed> */

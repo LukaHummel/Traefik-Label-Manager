@@ -5,6 +5,6 @@ Icon="globe"
 <style>
 .nav-item.TraefikLabelManagerIntegration { display: none !important; }
 </style>
-<link rel="stylesheet" href="/plugins/traefik.label.manager/styles/traefik-label-manager.css?v=2026.07.21.2">
-<script src="/plugins/traefik.label.manager/javascript/traefik-label-form.js?v=2026.07.21.2"></script>
+<link rel="stylesheet" href="/plugins/traefik.label.manager/styles/traefik-label-manager.css?v=2026.07.21.3">
+<script src="/plugins/traefik.label.manager/javascript/traefik-label-form.js?v=2026.07.21.3"></script>
 <script>function TraefikLabelManagerIntegration() { return false; }</script>

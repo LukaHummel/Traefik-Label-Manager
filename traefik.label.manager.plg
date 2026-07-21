@@ -32,7 +32,7 @@ rm -f /boot/config/plugins/docker.dns.plg
 </FILE>
 <FILE Name="&pluginDir;/&package;" Run="upgradepkg --install-new">
   <URL>&packageUrl;</URL>
-  <MD5>6ce9a6c500545a17b12e59b210ec9f45</MD5>
+  <MD5>6782e5aeefdc749600df4776f00d91fc</MD5>
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>

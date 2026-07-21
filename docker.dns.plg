@@ -47,7 +47,7 @@ fi
 </FILE>
 <FILE Name="&pluginDir;/&package;" Run="upgradepkg --install-new">
   <URL>&packageUrl;</URL>
-  <MD5>d9efe356d34c8496a6fa355de2197aed</MD5>
+  <MD5>83842c3318741080922bcc67413cf652</MD5>
 </FILE>
 <FILE Run="/bin/bash">
 <INLINE>

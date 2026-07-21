@@ -1,24 +1,61 @@
-name: CI
+name: CI and release
+
 on:
   push:
   pull_request:
+
 permissions:
   contents: read
+
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: curl
           coverage: none
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - run: sudo apt-get update && sudo apt-get install -y shellcheck libxml2-utils
-      - run: composer install --no-interaction --prefer-dist
-      - run: npm ci
-      - run: ./test.sh
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y shellcheck libxml2-utils
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Install Node.js dependencies
+        run: npm ci
+      - name: Run checks
+        run: ./test.sh
+
+  release:
+    name: Release plugin
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Build Slackware package and release plugin file
+        run: ./build.sh "${GITHUB_REF_NAME#v}" 1
+      - name: Verify generated checksum
+        run: |
+          package="dist/docker.dns-${GITHUB_REF_NAME#v}-noarch-1.txz"
+          checksum="$(md5sum "$package" | awk '{print $1}')"
+          grep -Fq "<MD5>$checksum</MD5>" dist/docker.dns.plg
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/docker.dns-*-noarch-1.txz
+            dist/docker.dns.plg

@@ -12,6 +12,11 @@ use DockerDns\JsonStore;
 use DockerDns\ProviderFactory;
 use DockerDns\SyncEngine;
 use DockerDns\Url;
+use DockerDns\ProxyRouteResolver;
+use DockerDns\CaddyProxyAdapter;
+use DockerDns\TraefikProxyAdapter;
+use DockerDns\DockerRunner;
+use DockerDns\ProxyIntegration;
 use DockerDns\providers\AdGuardProvider;
 use DockerDns\providers\PiHoleProvider;
 use PHPUnit\Framework\TestCase;
@@ -167,19 +172,107 @@ final class PluginTest extends TestCase
             ]);
 
             self::assertSame([
-                'schema' => 1,
+                'schema' => 2,
                 'enabled' => true,
                 'provider' => 'pihole',
                 'base_url' => 'https://pihole.local',
                 'verify_tls' => false,
                 'timeout_seconds' => 25,
                 'host_ipv4_override' => '192.168.1.20',
+                'proxy_enabled' => false,
+                'proxy_adapter' => 'caddy',
+                'proxy_container' => '',
+                'proxy_network' => '',
+                'proxy_mount_source' => '',
+                'proxy_mount_destination' => '',
+                'caddy_main_config' => '/etc/caddy/Caddyfile',
+                'traefik_entrypoint' => 'web',
             ], $result['status']['settings']);
             self::assertSame($result['status']['settings'], $controller->get('status', [])['settings']);
             self::assertTrue($result['status']['credentials']['password_set']);
         } finally {
             putenv('DOCKER_DNS_CSRF_TOKEN');
             foreach (glob($directory . '/*') ?: [] as $file) unlink($file);
+            rmdir($directory);
+        }
+    }
+
+    public function testProxyRoutesUsePublishedAndPrivatePortsByNetworkMode(): void
+    {
+        $base = [
+            'name' => 'app', 'included' => true, 'proxy_enabled' => true,
+            'ports' => [['private' => 80, 'public' => 8080, 'protocol' => 'tcp']],
+            'hostname' => 'app.home.arpa', 'target_ipv4' => '192.168.1.10',
+            'webui_label' => 'http://[IP]:[PORT:80]/ui', 'automatic_url' => 'http://app.home.arpa:8080/ui',
+            'url_override' => '', 'proxy_scheme' => 'auto', 'proxy_verify_tls' => true,
+            'proxy_tls_server_name' => '', 'proxy_private_port' => null,
+        ];
+        $routes = (new ProxyRouteResolver())->resolve([$base]);
+        self::assertSame(8080, $routes[0]['upstream_port']);
+
+        $direct = $base;
+        $direct['name'] = 'direct';
+        $direct['hostname'] = 'direct.home.arpa';
+        $direct['direct_network'] = true;
+        $routes = (new ProxyRouteResolver())->resolve([$direct]);
+        self::assertSame(80, $routes[0]['upstream_port']);
+        self::assertSame('http://direct.home.arpa/ui', $routes[0]['public_url']);
+    }
+
+    public function testProxyAdaptersRenderIsolatedRoutesAndTlsPolicy(): void
+    {
+        $route = [[
+            'hostname' => 'app.home.arpa', 'upstream_scheme' => 'https',
+            'upstream_host' => '192.168.1.50', 'upstream_port' => 443,
+            'verify_tls' => false, 'tls_server_name' => '',
+        ]];
+        $caddy = (new CaddyProxyAdapter())->render($route);
+        self::assertStringContainsString('http://app.home.arpa', $caddy);
+        self::assertStringContainsString('tls_insecure_skip_verify', $caddy);
+        self::assertStringContainsString('docker-dns-probe.invalid', $caddy);
+
+        $traefik = (new TraefikProxyAdapter())->render($route);
+        self::assertStringContainsString('Host(`app.home.arpa`)', $traefik);
+        self::assertStringContainsString('insecureSkipVerify: true', $traefik);
+        self::assertStringContainsString('docker-dns-probe', $traefik);
+    }
+
+    public function testProxyIntegrationOnlyWritesOwnedConfigAndReloadsUserContainer(): void
+    {
+        $directory = sys_get_temp_dir() . '/docker-dns-proxy-' . bin2hex(random_bytes(6));
+        mkdir($directory, 0700, true);
+        putenv('DOCKER_DNS_TEST_PROXY_PATH=' . $directory);
+        $commands = [];
+        $inspect = [[
+            'Id' => 'proxy-id', 'State' => ['Running' => true],
+            'NetworkSettings' => ['Networks' => ['lan' => ['IPAddress' => '192.168.1.9', 'IPAMConfig' => ['IPv4Address' => '192.168.1.9']]]],
+            'Mounts' => [['Type' => 'bind', 'Source' => $directory, 'Destination' => '/config', 'RW' => true]],
+        ]];
+        $network = [['Driver' => 'macvlan']];
+        $runner = new DockerRunner(static function (string $command) use (&$commands, $inspect, $network): string {
+            $commands[] = $command;
+            if (str_contains($command, "'network' 'inspect' '--'")) return json_encode($network, JSON_THROW_ON_ERROR);
+            if (str_contains($command, "'inspect' '--' 'caddy'")) return json_encode($inspect, JSON_THROW_ON_ERROR);
+            if (str_contains($command, "'caddy' 'version'")) return 'v2.11.4';
+            return 'ok';
+        });
+        try {
+            $integration = new ProxyIntegration($runner, new DockerDns\ProxyAdapterFactory(), static fn(string $ip, int $status): bool => $ip === '192.168.1.9' && $status === 204);
+            $result = $integration->apply([
+                'proxy_adapter' => 'caddy', 'proxy_container' => 'caddy', 'proxy_network' => 'lan',
+                'proxy_mount_source' => $directory, 'proxy_mount_destination' => '/config',
+                'caddy_main_config' => '/etc/caddy/Caddyfile',
+            ], []);
+            self::assertSame('192.168.1.9', $result['ipv4']);
+            self::assertFileExists($directory . '/docker-dns/docker-dns.caddy');
+            self::assertStringContainsString('docker-dns-probe.invalid', (string)file_get_contents($directory . '/docker-dns/docker-dns.caddy'));
+            self::assertTrue((bool)array_filter($commands, static fn(string $command): bool => str_contains($command, "'caddy' 'reload'")));
+            self::assertFalse((bool)array_filter($commands, static fn(string $command): bool => preg_match("/ '(?:create|start|stop|rm)' /", $command) === 1));
+        } finally {
+            putenv('DOCKER_DNS_TEST_PROXY_PATH');
+            foreach (glob($directory . '/docker-dns/*') ?: [] as $file) unlink($file);
+            @unlink($directory . '/docker-dns/.managed-by-docker-dns.json');
+            @rmdir($directory . '/docker-dns');
             rmdir($directory);
         }
     }

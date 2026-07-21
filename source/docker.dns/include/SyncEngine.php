@@ -13,6 +13,8 @@ final class SyncEngine
         private readonly Config $config,
         private readonly DockerDiscovery $discovery = new DockerDiscovery(),
         private readonly ProviderFactory $providers = new ProviderFactory(),
+        private readonly ProxyIntegration $proxy = new ProxyIntegration(),
+        private readonly ProxyRouteResolver $routes = new ProxyRouteResolver(),
     ) {
     }
 
@@ -23,7 +25,9 @@ final class SyncEngine
         $overrides = $this->config->overrides();
         $state = $this->config->state();
         $containers = $this->discovery->discover($settings, $overrides, $state);
-        return $this->writeDiscoveryState($state, $containers);
+        $routes = $this->routes->resolve($containers);
+        $proxyActive = (bool)($settings['proxy_enabled'] ?? false) && ($state['proxy']['status'] ?? '') === 'active';
+        return $this->writeDiscoveryState($state, $containers, $routes, true, $proxyActive);
     }
 
     /** @return array<string,mixed> */
@@ -35,17 +39,39 @@ final class SyncEngine
             $overrides = $this->config->overrides();
             $state = $this->config->state();
             $containers = $this->discovery->discover($settings, $overrides, $state);
-            $state = $this->writeDiscoveryState($state, $containers, false);
+            $routes = $this->routes->resolve($containers);
+            $state = $this->writeDiscoveryState($state, $containers, $routes, false);
             $state['last_sync'] = gmdate(DATE_ATOM);
             if (!$force && !($settings['enabled'] ?? false)) {
                 $state['last_error'] = '';
                 $this->config->saveState($state);
                 return $state;
             }
+            $proxyEnabled = (bool)($settings['proxy_enabled'] ?? false);
+            $proxyInfo = null;
+            try {
+                if ($proxyEnabled) {
+                    $proxyInfo = $this->proxy->apply($settings, $routes);
+                    $state['proxy'] = array_replace($proxyInfo, ['status' => 'active']);
+                    $state = $this->writeDiscoveryState($state, $containers, $routes, false, true);
+                } else {
+                    $state['proxy'] = array_replace((array)($state['proxy'] ?? []), ['status' => 'disabled', 'last_error' => '']);
+                }
+            } catch (Throwable $error) {
+                $state['proxy'] = array_replace((array)($state['proxy'] ?? []), ['status' => 'error', 'last_error' => $error->getMessage()]);
+                $state['last_error'] = 'Reverse proxy: ' . $error->getMessage();
+                $this->config->saveState($state);
+                Logger::error($state['last_error']);
+                throw $error;
+            }
+            $routeHosts = [];
+            foreach ($routes as $route) $routeHosts[(string)$route['hostname']] = $route;
             $desired = [];
             foreach ($containers as $container) {
                 if ($container['included'] && filter_var($container['target_ipv4'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-                    $desired[strtolower((string)$container['hostname'])] = (string)$container['target_ipv4'];
+                    $hostname = strtolower((string)$container['hostname']);
+                    $desired[$hostname] = $proxyInfo !== null && isset($routeHosts[$hostname])
+                        ? (string)$proxyInfo['ipv4'] : (string)$container['target_ipv4'];
                 }
             }
             $previous = is_array($state['records'] ?? null) ? $state['records'] : [];
@@ -67,6 +93,15 @@ final class SyncEngine
                     }
                 }
                 unset($containerState);
+                if (!$proxyEnabled && (($state['proxy']['container_name'] ?? '') !== '') && trim((string)($settings['proxy_container'] ?? '')) !== '') {
+                    try {
+                        $this->proxy->apply($settings, []);
+                    } catch (Throwable $error) {
+                        $state['proxy'] = array_replace((array)$state['proxy'], ['status' => 'error', 'last_error' => $error->getMessage()]);
+                        $state['last_error'] = 'DNS was restored directly, but generated proxy routes could not be cleared: ' . $error->getMessage();
+                        Logger::warning('Could not clear generated proxy routes: ' . $error->getMessage());
+                    }
+                }
             } catch (Throwable $error) {
                 $state['last_error'] = $error->getMessage();
                 $this->config->saveState($state);
@@ -83,6 +118,19 @@ final class SyncEngine
         $this->providers->create($settings, $secrets)->test();
     }
 
+    /** @return list<array<string,mixed>> */
+    public function proxyCandidates(): array
+    {
+        return $this->proxy->candidates();
+    }
+
+    /** @return array<string,mixed> */
+    public function validateProxy(array $settings): array
+    {
+        $containers = $this->discovery->discover($settings, $this->config->overrides(), $this->config->state());
+        return $this->proxy->apply($settings, $this->routes->resolve($containers));
+    }
+
     public function cleanup(array $settings, array $secrets, bool $clearState = true): void
     {
         $this->withLock(function () use ($settings, $secrets, $clearState): void {
@@ -90,6 +138,13 @@ final class SyncEngine
             $records = is_array($state['records'] ?? null) ? $state['records'] : [];
             if ($records !== []) {
                 $this->providers->create($settings, $secrets)->reconcile([], array_keys($records));
+            }
+            if (trim((string)($settings['proxy_container'] ?? '')) !== '') {
+                try {
+                    $this->proxy->apply($settings, []);
+                } catch (Throwable $error) {
+                    Logger::warning('Best-effort proxy cleanup failed: ' . $error->getMessage());
+                }
             }
             if ($clearState) {
                 $state['records'] = [];
@@ -102,11 +157,16 @@ final class SyncEngine
     }
 
     /** @param list<array<string,mixed>> $containers @return array<string,mixed> */
-    private function writeDiscoveryState(array $state, array $containers, bool $save = true): array
+    private function writeDiscoveryState(array $state, array $containers, array $routes = [], bool $save = true, bool $proxyActive = false): array
     {
+        $routeMap = [];
+        foreach ($routes as $route) $routeMap[(string)$route['name']] = $route;
         $contextUrls = [];
         $indexed = [];
         foreach ($containers as $container) {
+            $route = $routeMap[$container['name']] ?? null;
+            $proxyUrl = is_array($route) ? (string)$route['public_url'] : '';
+            $effectiveUrl = $proxyActive && $proxyUrl !== '' ? $proxyUrl : $container['url'];
             $indexed[$container['name']] = [
                 'name' => $container['name'],
                 'running' => $container['running'],
@@ -117,11 +177,22 @@ final class SyncEngine
                 'target_status' => $container['target_status'],
                 'automatic_url' => $container['automatic_url'],
                 'url_override' => $container['url_override'],
-                'url' => $container['url'],
+                'url' => $effectiveUrl,
+                'direct_url' => $container['url'],
+                'proxy_url' => $proxyUrl,
+                'proxy_enabled' => (bool)($container['proxy_enabled'] ?? true),
+                'proxy_eligible' => is_array($route),
+                'proxy_status' => $proxyActive && is_array($route) ? 'active' : (is_array($route) ? 'pending' : 'direct'),
+                'proxy_private_port' => $container['proxy_private_port'] ?? null,
+                'proxy_scheme' => $container['proxy_scheme'] ?? 'auto',
+                'proxy_verify_tls' => $container['proxy_verify_tls'] ?? true,
+                'proxy_tls_server_name' => $container['proxy_tls_server_name'] ?? '',
+                'proxy_upstream' => is_array($route) ? $route['upstream_scheme'] . '://' . $route['upstream_host'] . ':' . $route['upstream_port'] : '',
+                'network_driver' => $container['network_driver'] ?? 'bridge',
                 'dns_status' => (string)($state['containers'][$container['name']]['dns_status'] ?? 'pending'),
             ];
-            if ($container['running'] && $container['included'] && is_string($container['url']) && $container['url'] !== '') {
-                $contextUrls[$container['name']] = $container['url'];
+            if ($container['running'] && $container['included'] && is_string($effectiveUrl) && $effectiveUrl !== '') {
+                $contextUrls[$container['name']] = $effectiveUrl;
             }
         }
         $state['revision'] = (int)($state['revision'] ?? 0) + 1;
@@ -152,4 +223,3 @@ final class SyncEngine
         }
     }
 }
-

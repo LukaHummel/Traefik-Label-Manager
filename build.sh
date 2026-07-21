@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-version="${1:-2026.07.20}"
+version="${1:-2026.07.21}"
 build="${2:-1}"
 repo_dir="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$repo_dir/dist"

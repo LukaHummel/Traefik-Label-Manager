@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CommunityApplications>
-  <Profile>Docker DNS publishes Unraid Docker containers as IPv4 `.home.arpa` names through a local AdGuard Home or Pi-hole v6 server.</Profile>
+  <Profile>Docker DNS publishes Unraid Docker containers as IPv4 `.home.arpa` names through AdGuard Home or Pi-hole and can configure a user-managed Caddy or Traefik reverse proxy.</Profile>
   <Icon>https://raw.githubusercontent.com/LukaHummel/Unraid-Docker-DNS-Plugin/main/icon.svg</Icon>
   <WebPage>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin</WebPage>
   <Forum>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues</Forum>

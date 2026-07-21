@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 2026.07.21
+
+- Add optional, portless HTTP routing through a user-managed Caddy v2 or
+  Traefik v2/v3 container.
+- Discover the proxy's static LAN IPv4 and appdata mounts without creating or
+  modifying its Docker lifecycle.
+- Generate marker-protected adapter configuration with validation, load probes,
+  atomic updates, and rollback before DNS records switch to the proxy.
+- Add automatic and per-container upstream port, protocol, and TLS controls.
+
 ## 2026.07.20.3
 
 - Keep provider form values intact while Test Connection, Sync Now, Cleanup All,

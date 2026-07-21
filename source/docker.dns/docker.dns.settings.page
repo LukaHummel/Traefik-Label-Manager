@@ -2,7 +2,7 @@ Menu="OtherSettings"
 Title="Docker DNS"
 Icon="globe"
 ---
-<link rel="stylesheet" href="/plugins/docker.dns/styles/docker-dns.css?v=2026.07.21">
+<link rel="stylesheet" href="/plugins/docker.dns/styles/docker-dns.css?v=2026.07.24">
 <div id="docker-dns-settings">
   <form id="docker-dns-provider-form" onsubmit="return false">
     <fieldset>
@@ -16,9 +16,21 @@ Icon="globe"
       <dl><dt>Unraid IPv4 override:</dt><dd><input id="docker-dns-host-ip" type="text" inputmode="decimal" placeholder="Detected automatically"></dd></dl>
       <dl><dt>Request timeout:</dt><dd><input id="docker-dns-timeout" type="number" min="2" max="60" value="10"> seconds</dd></dl>
     </fieldset>
+    <fieldset>
+      <legend>Reverse Proxy</legend>
+      <p class="docker-dns-help">Optional integration with a user-managed Caddy or Traefik container. Docker DNS only writes the generated <code>docker-dns</code> subdirectory inside the selected bind mount.</p>
+      <dl><dt>Enabled:</dt><dd><select id="docker-dns-proxy-enabled"><option value="false">No</option><option value="true">Yes</option></select></dd></dl>
+      <dl><dt>Adapter:</dt><dd><select id="docker-dns-proxy-adapter"><option value="caddy">Caddy v2</option><option value="traefik">Traefik v2/v3</option></select></dd></dl>
+      <dl><dt>Proxy container:</dt><dd><select id="docker-dns-proxy-container"><option value="">Select a container</option></select></dd></dl>
+      <dl><dt>LAN network:</dt><dd><select id="docker-dns-proxy-network"><option value="">Select a static-IP network</option></select></dd></dl>
+      <dl><dt>Appdata bind mount:</dt><dd><select id="docker-dns-proxy-mount"><option value="">Select a writable bind mount</option></select><div id="docker-dns-proxy-mount-help" class="docker-dns-help"></div></dd></dl>
+      <dl id="docker-dns-caddy-config-row"><dt>Main Caddyfile:</dt><dd><input id="docker-dns-caddy-config" type="text" value="/etc/caddy/Caddyfile"><div class="docker-dns-help">Add <code>import &lt;mount destination&gt;/docker-dns/*.caddy</code> to this file once.</div></dd></dl>
+      <dl id="docker-dns-traefik-entrypoint-row"><dt>HTTP entrypoint:</dt><dd><input id="docker-dns-traefik-entrypoint" type="text" value="web"><div class="docker-dns-help">Configure Traefik's file provider to watch <code>&lt;mount destination&gt;/docker-dns</code>.</div></dd></dl>
+    </fieldset>
     <div class="docker-dns-actions">
       <button type="button" id="docker-dns-save-settings">Save</button>
       <button type="button" id="docker-dns-test">Test Connection</button>
+      <button type="button" id="docker-dns-validate-proxy">Validate Proxy</button>
       <button type="button" id="docker-dns-sync">Sync Now</button>
       <button type="button" id="docker-dns-cleanup">Cleanup All</button>
     </div>
@@ -37,4 +49,4 @@ Icon="globe"
     </div>
   </section>
 </div>
-<script src="/plugins/docker.dns/javascript/docker-dns-settings.js?v=2026.07.23"></script>
+<script src="/plugins/docker.dns/javascript/docker-dns-settings.js?v=2026.07.24"></script>

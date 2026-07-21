@@ -60,6 +60,9 @@ final class DockerDiscovery
             if ($name === '') {
                 continue;
             }
+            if (($settings['proxy_enabled'] ?? false) && $name === trim((string)($settings['proxy_container'] ?? ''))) {
+                continue;
+            }
             $eligibleNames[] = $name;
             $parsed[$name] = [$inspect, $ports];
         }
@@ -72,8 +75,13 @@ final class DockerDiscovery
             $hostname = $hostnames[$name];
             $label = (string)($inspect['Config']['Labels']['net.unraid.docker.webui'] ?? '');
             $directNetwork = false;
+            $networkDriver = 'bridge';
             foreach (array_keys((array)($inspect['NetworkSettings']['Networks'] ?? [])) as $networkName) {
-                $directNetwork = $directNetwork || in_array($networkDrivers[(string)$networkName] ?? '', ['macvlan', 'ipvlan'], true);
+                $driver = $networkDrivers[(string)$networkName] ?? '';
+                $directNetwork = $directNetwork || in_array($driver, ['macvlan', 'ipvlan'], true);
+                if (in_array($driver, ['macvlan', 'ipvlan'], true)) {
+                    $networkDriver = $driver;
+                }
             }
             $automatic = Url::automatic($hostname, $ports, $label, $directNetwork);
             $override = trim((string)($entry['url_override'] ?? ''));
@@ -90,6 +98,13 @@ final class DockerDiscovery
                 'url_override' => $override,
                 'url' => $override !== '' ? $override : $automatic,
                 'webui_label' => $label,
+                'direct_network' => $directNetwork,
+                'network_driver' => $networkDriver,
+                'proxy_enabled' => !array_key_exists('proxy_enabled', $entry) || (bool)$entry['proxy_enabled'],
+                'proxy_private_port' => isset($entry['proxy_private_port']) ? (int)$entry['proxy_private_port'] : null,
+                'proxy_scheme' => (string)($entry['proxy_scheme'] ?? 'auto'),
+                'proxy_verify_tls' => !array_key_exists('proxy_verify_tls', $entry) || (bool)$entry['proxy_verify_tls'],
+                'proxy_tls_server_name' => trim((string)($entry['proxy_tls_server_name'] ?? '')),
             ];
         }
         usort($containers, static fn(array $a, array $b): int => strnatcasecmp($a['name'], $b['name']));

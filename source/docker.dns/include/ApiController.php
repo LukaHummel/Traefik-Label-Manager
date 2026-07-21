@@ -35,6 +35,7 @@ final class ApiController
             'save-settings' => $this->saveSettings($input),
             'test-connection' => $this->testConnection($input),
             'sync-now' => ['ok' => true, 'state' => $this->sync->sync(true)],
+            'validate-proxy' => $this->validateProxy($input),
             'cleanup-all' => $this->cleanupAll(),
             'integration-warning' => $this->integrationWarning((string)($input['message'] ?? '')),
             default => throw new InvalidArgumentException('Unknown API action.'),
@@ -68,6 +69,7 @@ final class ApiController
             ],
             'state' => $this->config->state(),
             'overrides_revision' => (int)($this->config->overrides()['revision'] ?? 0),
+            'proxy_candidates' => $this->sync->proxyCandidates(),
         ];
     }
 
@@ -81,6 +83,8 @@ final class ApiController
             'container_name' => $name,
             'url_override' => (string)($entry['url_override'] ?? ''),
             'automatic_url' => (string)($container['automatic_url'] ?? ''),
+            'proxy_url' => (string)($container['proxy_url'] ?? ''),
+            'effective_url' => (string)($container['url'] ?? ''),
             'hostname' => (string)($container['hostname'] ?? (Hostname::label($name) . '.home.arpa')),
         ];
     }
@@ -145,6 +149,37 @@ final class ApiController
                 $entry['url_override'] = $url;
             }
         }
+        if (array_key_exists('proxy_enabled', $input)) {
+            $entry['proxy_enabled'] = filter_var($input['proxy_enabled'], FILTER_VALIDATE_BOOL);
+        }
+        if (array_key_exists('proxy_private_port', $input)) {
+            $port = trim((string)$input['proxy_private_port']);
+            if ($port === '') {
+                unset($entry['proxy_private_port']);
+            } elseif (!ctype_digit($port) || (int)$port < 1 || (int)$port > 65535) {
+                throw new InvalidArgumentException('Proxy port must be between 1 and 65535.');
+            } else {
+                $entry['proxy_private_port'] = (int)$port;
+            }
+        }
+        if (array_key_exists('proxy_scheme', $input)) {
+            $scheme = strtolower((string)$input['proxy_scheme']);
+            if (!in_array($scheme, ['auto', 'http', 'https'], true)) {
+                throw new InvalidArgumentException('Proxy scheme must be automatic, HTTP, or HTTPS.');
+            }
+            $entry['proxy_scheme'] = $scheme;
+        }
+        if (array_key_exists('proxy_verify_tls', $input)) {
+            $entry['proxy_verify_tls'] = filter_var($input['proxy_verify_tls'], FILTER_VALIDATE_BOOL);
+        }
+        if (array_key_exists('proxy_tls_server_name', $input)) {
+            $serverName = strtolower(trim((string)$input['proxy_tls_server_name']));
+            if ($serverName !== '' && !Hostname::isValidHost($serverName)) {
+                throw new InvalidArgumentException('Proxy TLS server name is invalid.');
+            }
+            if ($serverName === '') unset($entry['proxy_tls_server_name']);
+            else $entry['proxy_tls_server_name'] = $serverName;
+        }
         $overrides['containers'][$name] = $entry;
         $overrides['revision'] = (int)($overrides['revision'] ?? 0) + 1;
         $this->config->saveOverrides($overrides);
@@ -159,6 +194,14 @@ final class ApiController
         $oldSettings = $this->config->settings();
         $oldSecrets = $this->config->secrets();
         $state = $this->config->state();
+        $proxyFields = ['proxy_adapter', 'proxy_container', 'proxy_network', 'proxy_mount_source', 'proxy_mount_destination'];
+        $proxyChanged = false;
+        foreach ($proxyFields as $field) {
+            if (($oldSettings[$field] ?? '') !== ($settings[$field] ?? '')) $proxyChanged = true;
+        }
+        if ($proxyChanged && ($state['proxy']['status'] ?? '') === 'active') {
+            throw new InvalidArgumentException('Disable the reverse proxy with its current settings and Sync Now before changing its container, adapter, network, or mount.');
+        }
         if ((array)$state['records'] !== [] && Config::providerIdentity($oldSettings) !== Config::providerIdentity($settings)) {
             $this->sync->cleanup($oldSettings, $oldSecrets);
         }
@@ -173,6 +216,13 @@ final class ApiController
         [$settings, $secrets] = $this->validatedProviderInput($input);
         $this->sync->testProvider($settings, $secrets);
         return ['ok' => true, 'message' => 'Connection succeeded.'];
+    }
+
+    /** @return array<string,mixed> */
+    private function validateProxy(array $input): array
+    {
+        [$settings] = $this->validatedProviderInput($input);
+        return ['ok' => true, 'proxy' => $this->sync->validateProxy($settings), 'message' => 'Proxy integration loaded successfully.'];
     }
 
     /** @return array<string,mixed> */
@@ -214,20 +264,50 @@ final class ApiController
             throw new InvalidArgumentException('Unraid override must be a valid IPv4 address.');
         }
         $settings = [
-            'schema' => 1,
+            'schema' => 2,
             'enabled' => filter_var($input['enabled'] ?? $currentSettings['enabled'], FILTER_VALIDATE_BOOL),
             'provider' => $provider,
             'base_url' => $baseUrl,
             'verify_tls' => filter_var($input['verify_tls'] ?? $currentSettings['verify_tls'], FILTER_VALIDATE_BOOL),
             'timeout_seconds' => max(2, min(60, (int)($input['timeout_seconds'] ?? $currentSettings['timeout_seconds']))),
             'host_ipv4_override' => $hostIp,
+            'proxy_enabled' => filter_var($input['proxy_enabled'] ?? $currentSettings['proxy_enabled'], FILTER_VALIDATE_BOOL),
+            'proxy_adapter' => $this->validatedChoice((string)($input['proxy_adapter'] ?? $currentSettings['proxy_adapter']), ['caddy', 'traefik'], 'Proxy adapter'),
+            'proxy_container' => trim((string)($input['proxy_container'] ?? $currentSettings['proxy_container'])),
+            'proxy_network' => trim((string)($input['proxy_network'] ?? $currentSettings['proxy_network'])),
+            'proxy_mount_source' => rtrim(trim((string)($input['proxy_mount_source'] ?? $currentSettings['proxy_mount_source'])), '/'),
+            'proxy_mount_destination' => rtrim(trim((string)($input['proxy_mount_destination'] ?? $currentSettings['proxy_mount_destination'])), '/'),
+            'caddy_main_config' => trim((string)($input['caddy_main_config'] ?? $currentSettings['caddy_main_config'])),
+            'traefik_entrypoint' => trim((string)($input['traefik_entrypoint'] ?? $currentSettings['traefik_entrypoint'])),
         ];
+        if ($settings['proxy_container'] !== '' && !preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', $settings['proxy_container'])) {
+            throw new InvalidArgumentException('Invalid proxy container name.');
+        }
+        if ($settings['proxy_network'] !== '' && !preg_match('/^[A-Za-z0-9_.-]+$/', $settings['proxy_network'])) {
+            throw new InvalidArgumentException('Invalid proxy Docker network name.');
+        }
+        if ($settings['proxy_mount_source'] !== '' && !str_starts_with($settings['proxy_mount_source'], '/')) {
+            throw new InvalidArgumentException('Proxy mount source must be an absolute path.');
+        }
+        if ($settings['proxy_mount_destination'] !== '' && !str_starts_with($settings['proxy_mount_destination'], '/')) {
+            throw new InvalidArgumentException('Proxy mount destination must be an absolute path.');
+        }
+        if (!str_starts_with($settings['caddy_main_config'], '/') || !preg_match('/^[A-Za-z0-9_.-]+$/', $settings['traefik_entrypoint'])) {
+            throw new InvalidArgumentException('Invalid adapter configuration path or entrypoint.');
+        }
         $password = (string)($input['password'] ?? '');
         $secrets = [
             'username' => trim((string)($input['username'] ?? $currentSecrets['username'])),
             'password' => $password !== '' ? $password : (string)$currentSecrets['password'],
         ];
         return [$settings, $secrets];
+    }
+
+    /** @param list<string> $allowed */
+    private function validatedChoice(string $value, array $allowed, string $label): string
+    {
+        if (!in_array($value, $allowed, true)) throw new InvalidArgumentException("$label is invalid.");
+        return $value;
     }
 
     private function validateContainerName(string $name): string

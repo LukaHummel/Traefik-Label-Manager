@@ -11,6 +11,14 @@ const statusResponse = {
     verify_tls: true,
     host_ipv4_override: '',
     timeout_seconds: 10,
+    proxy_enabled: false,
+    proxy_adapter: 'caddy',
+    proxy_container: '',
+    proxy_network: '',
+    proxy_mount_source: '',
+    proxy_mount_destination: '',
+    caddy_main_config: '/etc/caddy/Caddyfile',
+    traefik_entrypoint: 'web',
   },
   credentials: {username: 'admin', password_set: true},
   state: {
@@ -18,6 +26,7 @@ const statusResponse = {
     last_success: '2026-07-20T12:00:00Z',
     last_error: '',
     integration_warning: '',
+    proxy: {status: 'disabled', last_error: ''},
     containers: {
       plex: {
         name: 'plex',
@@ -30,6 +39,11 @@ const statusResponse = {
         automatic_url: 'http://plex.home.arpa:8080',
         url_override: '',
         dns_status: 'synchronized',
+        proxy_enabled: true,
+        proxy_status: 'pending',
+        proxy_scheme: 'auto',
+        proxy_verify_tls: true,
+        proxy_private_port: null,
       },
       worker: {
         name: 'worker',
@@ -42,6 +56,11 @@ const statusResponse = {
         automatic_url: '',
         url_override: '',
         dns_status: 'excluded',
+        proxy_enabled: true,
+        proxy_status: 'direct',
+        proxy_scheme: 'auto',
+        proxy_verify_tls: true,
+        proxy_private_port: null,
       },
     },
   },
@@ -57,8 +76,17 @@ describe('responsive container list', () => {
           <input id="docker-dns-base-url"><input id="docker-dns-username"><input id="docker-dns-password">
           <select id="docker-dns-verify-tls"><option value="true">Yes</option></select>
           <input id="docker-dns-host-ip"><input id="docker-dns-timeout">
+          <select id="docker-dns-proxy-enabled"><option value="false">No</option></select>
+          <select id="docker-dns-proxy-adapter"><option value="caddy">Caddy</option><option value="traefik">Traefik</option></select>
+          <select id="docker-dns-proxy-container"><option value=""></option></select>
+          <select id="docker-dns-proxy-network"><option value=""></option></select>
+          <select id="docker-dns-proxy-mount"><option value=""></option></select>
+          <div id="docker-dns-proxy-mount-help"></div>
+          <div id="docker-dns-caddy-config-row"></div><div id="docker-dns-traefik-entrypoint-row"></div>
+          <input id="docker-dns-caddy-config"><input id="docker-dns-traefik-entrypoint">
           <div id="docker-dns-username-row"></div>
           <button type="button" id="docker-dns-save-settings"></button><button type="button" id="docker-dns-test"></button>
+          <button type="button" id="docker-dns-validate-proxy"></button>
           <button type="button" id="docker-dns-sync"></button><button type="button" id="docker-dns-cleanup"></button>
         </form>
         <div id="docker-dns-status"></div><span id="docker-dns-container-count"></span>
@@ -101,6 +129,10 @@ describe('responsive container list', () => {
       included: 'true',
       target_ipv4_override: '192.168.1.44',
       url_override: 'https://plex.home.arpa/app',
+      proxy_enabled: 'true',
+      proxy_private_port: '',
+      proxy_scheme: 'auto',
+      proxy_verify_tls: 'true',
       csrf_token: 'token',
       docker_dns_csrf_token: 'token',
     });

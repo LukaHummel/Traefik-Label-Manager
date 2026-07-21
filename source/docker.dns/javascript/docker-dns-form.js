@@ -101,7 +101,7 @@
         .then(function (response) { return response.json(); })
         .then(function (body) {
           input.value = body.url_override || '';
-          setPlaceholder(body.automatic_url || '');
+          setPlaceholder(body.proxy_url || body.automatic_url || '');
           previousName = name;
           dirty = false;
           renamePending = false;

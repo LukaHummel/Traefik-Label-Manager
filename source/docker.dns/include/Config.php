@@ -33,13 +33,21 @@ final class Config
     public function settings(): array
     {
         return $this->store->read(self::CONFIG_FILE, [
-            'schema' => 1,
+            'schema' => 2,
             'enabled' => false,
             'provider' => 'adguard',
             'base_url' => '',
             'verify_tls' => true,
             'timeout_seconds' => 10,
             'host_ipv4_override' => '',
+            'proxy_enabled' => false,
+            'proxy_adapter' => 'caddy',
+            'proxy_container' => '',
+            'proxy_network' => '',
+            'proxy_mount_source' => '',
+            'proxy_mount_destination' => '',
+            'caddy_main_config' => '/etc/caddy/Caddyfile',
+            'traefik_entrypoint' => 'web',
         ]);
     }
 
@@ -74,6 +82,18 @@ final class Config
             'last_success' => null,
             'last_error' => '',
             'integration_warning' => '',
+            'proxy' => [
+                'status' => 'disabled',
+                'adapter' => '',
+                'container_id' => '',
+                'container_name' => '',
+                'network' => '',
+                'ipv4' => '',
+                'config_hash' => '',
+                'generated_path' => '',
+                'last_apply' => null,
+                'last_error' => '',
+            ],
         ]);
     }
 

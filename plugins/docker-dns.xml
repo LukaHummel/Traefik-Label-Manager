@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Plugin>
   <Name>Docker DNS</Name>
-  <Overview>Publishes Docker container names below home.arpa through AdGuard Home or Pi-hole and adds a separate Docker DNS WebUI context-menu link.</Overview>
+  <Overview>Publishes Docker container names below home.arpa through AdGuard Home or Pi-hole, adds WebUI links, and can generate routes for a user-managed Caddy or Traefik container.</Overview>
   <PluginURL>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/docker.dns.plg</PluginURL>
   <PluginAuthor>Luka Hummel</PluginAuthor>
   <Support>https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues</Support>

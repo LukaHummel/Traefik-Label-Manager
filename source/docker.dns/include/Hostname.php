@@ -6,6 +6,11 @@ namespace DockerDns;
 
 final class Hostname
 {
+    public static function isValidHost(string $host): bool
+    {
+        return filter_var($host, FILTER_VALIDATE_IP) !== false
+            || (bool)preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i', $host);
+    }
     public static function label(string $containerName): string
     {
         $label = strtolower(trim($containerName));

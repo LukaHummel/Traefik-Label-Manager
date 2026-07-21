@@ -6,7 +6,7 @@ Icon="globe"
 /* This Buttons page exists only to load the non-template integration. */
 .nav-item.DockerDnsIntegration { display: none !important; }
 </style>
-<link rel="stylesheet" href="/plugins/docker.dns/styles/docker-dns.css?v=2026.07.20">
+<link rel="stylesheet" href="/plugins/docker.dns/styles/docker-dns.css?v=2026.07.24">
 <script src="/plugins/docker.dns/javascript/docker-dns-integration.js?v=2026.07.22"></script>
-<script src="/plugins/docker.dns/javascript/docker-dns-form.js?v=2026.07.22"></script>
+<script src="/plugins/docker.dns/javascript/docker-dns-form.js?v=2026.07.24"></script>
 <script>function DockerDnsIntegration() { return false; }</script>

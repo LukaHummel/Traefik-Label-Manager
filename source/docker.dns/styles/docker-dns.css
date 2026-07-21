@@ -1,169 +1,31 @@
-#docker-dns-settings fieldset { margin-bottom: 1.5rem; }
-#docker-dns-settings .docker-dns-help { margin: .3rem 0 .7rem; font-size: .82rem; opacity: .75; }
-#docker-dns-settings .docker-dns-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin: 1rem 0; }
-#docker-dns-settings .docker-dns-status { padding: .75rem; border-left: 4px solid #999; white-space: pre-wrap; }
-#docker-dns-settings .docker-dns-error { border-color: #d9534f; color: #d9534f; }
-.docker-dns-url-controls { display: flex; gap: .5rem; align-items: center; }
-.docker-dns-url-controls input { flex: 1 1 30rem; }
-.docker-dns-url-help { display: block; opacity: .75; margin-top: .35rem; }
+#docker-dns-settings { max-width: 72rem; }
+#docker-dns-settings code { white-space: nowrap; }
+#docker-dns-settings li { margin: .45rem 0; }
+#docker-dns-settings .docker-dns-notice {
+  margin: 1rem 0;
+  padding: .85rem 1rem;
+  border-left: .3rem solid #ff8c2f;
+  background: rgba(127, 127, 127, .1);
+}
 
-#docker-dns-settings .docker-dns-container-section { margin-top: 2rem; min-width: 0; }
-#docker-dns-settings .docker-dns-section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: .75rem;
-}
-#docker-dns-settings .docker-dns-section-heading h2 { margin: 0; }
-#docker-dns-settings .docker-dns-section-heading p { margin: .2rem 0 0; opacity: .72; }
-#docker-dns-settings .docker-dns-count {
-  flex: 0 0 auto;
-  padding: .25rem .65rem;
-  border: 1px solid rgba(127, 127, 127, .35);
-  border-radius: 999px;
-  font-size: .85rem;
-  white-space: nowrap;
-}
-#docker-dns-settings .docker-dns-container-list { display: grid; gap: .55rem; min-width: 0; }
-#docker-dns-settings .docker-dns-container {
+#docker-dns-traefik-row .docker-dns-traefik-controls {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.15fr) minmax(12rem, .8fr) minmax(18rem, 1.4fr) auto;
-  grid-template-areas: "summary ip url action" "proxy proxy proxy proxy";
-  align-items: center;
-  gap: .7rem 1rem;
-  min-width: 0;
-  padding: .8rem .9rem;
-  border: 1px solid rgba(127, 127, 127, .28);
-  border-radius: 5px;
-  background: rgba(127, 127, 127, .035);
+  grid-template-columns: minmax(9rem, auto) minmax(16rem, 1fr) minmax(12rem, 18rem);
+  align-items: end;
+  gap: .75rem;
 }
-#docker-dns-settings .docker-dns-container:hover { border-color: rgba(127, 127, 127, .48); }
-#docker-dns-settings .docker-dns-container.is-stopped { opacity: .72; }
-#docker-dns-settings .docker-dns-container-summary { grid-area: summary; min-width: 0; }
-#docker-dns-settings .docker-dns-container-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .6rem;
-  min-width: 0;
-}
-#docker-dns-settings .docker-dns-include-label {
-  display: flex;
-  align-items: center;
-  gap: .55rem;
-  min-width: 0;
-  font-weight: 600;
-  cursor: pointer;
-}
-#docker-dns-settings .docker-dns-include-label span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#docker-dns-settings .docker-dns-include { flex: 0 0 auto; margin: 0; }
-#docker-dns-settings .docker-dns-badge {
-  flex: 0 0 auto;
-  padding: .15rem .45rem;
-  border-radius: 999px;
-  background: rgba(127, 127, 127, .15);
-  font-size: .72rem;
-  font-weight: 600;
-  line-height: 1.35;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-#docker-dns-settings .docker-dns-badge.is-success { color: #2e8b57; background: rgba(46, 139, 87, .13); }
-#docker-dns-settings .docker-dns-badge.is-warning { color: #b5651d; background: rgba(181, 101, 29, .13); }
-#docker-dns-settings .docker-dns-container-meta {
-  display: flex;
-  gap: .35rem .7rem;
-  min-width: 0;
-  margin: .3rem 0 0 1.7rem;
-  font-size: .8rem;
-  opacity: .72;
-}
-#docker-dns-settings .docker-dns-container-meta > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#docker-dns-settings .docker-dns-ports::before { content: "Ports "; opacity: .72; }
-#docker-dns-settings .docker-dns-stopped { color: #b5651d; font-weight: 600; }
-#docker-dns-settings .docker-dns-field { display: block; min-width: 0; margin: 0; }
-#docker-dns-settings .docker-dns-ip-field { grid-area: ip; }
-#docker-dns-settings .docker-dns-url-field { grid-area: url; }
-#docker-dns-settings .docker-dns-field > span {
+#docker-dns-traefik-row .docker-dns-traefik-controls label > span {
   display: block;
   margin-bottom: .25rem;
-  font-size: .78rem;
-  font-weight: 600;
-  opacity: .76;
+  font-size: .82rem;
+  opacity: .8;
 }
-#docker-dns-settings .docker-dns-field input {
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0;
-}
-#docker-dns-settings .docker-dns-field small {
-  display: block;
-  min-width: 0;
-  margin-top: .22rem;
-  overflow: hidden;
-  font-size: .75rem;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: .72;
-}
-#docker-dns-settings .docker-dns-field small a { display: inline; }
-#docker-dns-settings .docker-dns-external { margin-left: .2rem; text-decoration: none; }
-#docker-dns-settings .docker-dns-muted { opacity: .75; }
-#docker-dns-settings .docker-dns-save-container { grid-area: action; align-self: center; }
-#docker-dns-settings .docker-dns-proxy-details { grid-area: proxy; min-width: 0; padding-top: .35rem; border-top: 1px solid rgba(127,127,127,.2); }
-#docker-dns-settings .docker-dns-proxy-details summary { cursor: pointer; font-size: .82rem; font-weight: 600; }
-#docker-dns-settings .docker-dns-proxy-controls { display: grid; grid-template-columns: repeat(5,minmax(8rem,1fr)); gap: .6rem; margin-top: .65rem; }
-#docker-dns-settings .docker-dns-proxy-controls label span { display: block; margin-bottom: .2rem; font-size: .75rem; opacity: .75; }
-#docker-dns-settings .docker-dns-proxy-controls select,
-#docker-dns-settings .docker-dns-proxy-controls input[type="text"] { box-sizing: border-box; width: 100%; }
-#docker-dns-settings .docker-dns-empty {
-  margin: 0;
-  padding: 1.25rem;
-  border: 1px dashed rgba(127, 127, 127, .4);
-  text-align: center;
-  opacity: .72;
-}
+#docker-dns-traefik-row input[type="text"],
+#docker-dns-traefik-row select { box-sizing: border-box; width: 100%; }
+#docker-dns-traefik-row .docker-dns-traefik-help,
+#docker-dns-traefik-row .docker-dns-traefik-error { display: block; margin-top: .45rem; font-size: .82rem; }
+#docker-dns-traefik-row .docker-dns-traefik-error { color: #d9534f; }
 
-@media (max-width: 1100px) {
-  #docker-dns-settings .docker-dns-container {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-    grid-template-areas:
-      "summary summary action"
-      "ip url url"
-      "proxy proxy proxy";
-  }
-  #docker-dns-settings .docker-dns-proxy-controls { grid-template-columns: repeat(2,minmax(0,1fr)); }
-}
-
-@media (max-width: 680px) {
-  #docker-dns-settings .docker-dns-section-heading { align-items: center; }
-  #docker-dns-settings .docker-dns-container {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "summary action"
-      "ip ip"
-      "url url"
-      "proxy proxy";
-  }
-  #docker-dns-settings .docker-dns-container-title { align-items: flex-start; }
-  #docker-dns-settings .docker-dns-container-meta { flex-direction: column; margin-left: 1.55rem; }
-  #docker-dns-settings .docker-dns-proxy-controls { grid-template-columns: minmax(0,1fr); }
-}
-
-@media (max-width: 420px) {
-  #docker-dns-settings .docker-dns-container {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "summary" "ip" "url" "proxy" "action";
-  }
-  #docker-dns-settings .docker-dns-save-container { width: 100%; }
+@media (max-width: 850px) {
+  #docker-dns-traefik-row .docker-dns-traefik-controls { grid-template-columns: 1fr; align-items: stretch; }
 }

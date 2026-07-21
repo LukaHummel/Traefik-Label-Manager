@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "docker.dns">
 <!ENTITY author "Luka Hummel">
-<!ENTITY version "2026.07.21">
+<!ENTITY version "2026.07.21.1">
 <!ENTITY build "1">
 <!ENTITY package "&name;-&version;-noarch-&build;.txz">
 <!ENTITY pluginDir "/boot/config/plugins/&name;">
@@ -10,6 +10,12 @@
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/docker.dns.settings" pluginURL="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/releases/latest/download/docker.dns.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin/issues" project="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin" readme="https://github.com/LukaHummel/Unraid-Docker-DNS-Plugin#readme">
 <CHANGES>
+###2026.07.21.1
+- Breaking: reduced the plugin to opt-in Traefik Docker label management
+- Added hostname and published backend-port controls to Unraid container forms
+- Removed DNS providers, Caddy/file-provider configuration, background services, credentials, and URL overrides
+- Upgrades attempt best-effort cleanup of legacy managed DNS records and generated proxy files before replacement
+
 ###2026.07.21
 - Added optional portless HTTP routing through a user-managed Caddy or Traefik container
 - Added automatic proxy IP, network, and appdata mount discovery
@@ -25,9 +31,23 @@
 ###2026.07.20
 - Initial beta release
 </CHANGES>
+<FILE Run="/bin/bash">
+<INLINE>
+legacy_root="/usr/local/emhttp/plugins/&name;"
+legacy_config="&pluginDir;"
+if [ -x "$legacy_root/scripts/service.sh" ]; then
+  "$legacy_root/scripts/service.sh" stop >/dev/null 2>&amp;1 || true
+fi
+rm -f "$legacy_config/docker.dns.cron"
+/usr/local/sbin/update_cron >/dev/null 2>&amp;1 || true
+if [ -x "$legacy_root/include/cli.php" ]; then
+  php "$legacy_root/include/cli.php" cleanup >/dev/null 2>&amp;1 || logger -t docker.dns "Best-effort legacy cleanup failed during upgrade"
+fi
+</INLINE>
+</FILE>
 <FILE Name="&pluginDir;/&package;" Run="upgradepkg --install-new">
   <URL>&packageUrl;</URL>
-  <MD5>00000000000000000000000000000000</MD5>
+  <MD5>d9efe356d34c8496a6fa355de2197aed</MD5>
 </FILE>
 <FILE Run="/bin/bash">
 <INLINE>

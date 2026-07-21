@@ -1,4 +1,0 @@
-#!/bin/bash
-/usr/local/emhttp/plugins/docker.dns/scripts/service.sh start
-php /usr/local/emhttp/plugins/docker.dns/include/cli.php sync >/dev/null 2>&1 || true
-

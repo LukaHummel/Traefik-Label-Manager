@@ -1,3 +1,0 @@
-#!/bin/bash
-/usr/local/emhttp/plugins/docker.dns/scripts/service.sh stop
-

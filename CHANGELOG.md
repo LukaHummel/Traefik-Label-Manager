@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 2026.07.21.1
+
+- Breaking: reduce the plugin to opt-in Traefik Docker label management.
+- Add editable `.home.arpa` hostname and published backend-port controls to
+  Unraid Add/Update Container forms.
+- Preserve unrelated manual labels and track ownership for safe disable/rename.
+- Remove DNS providers, credentials, state, URL overrides, Caddy and Traefik
+  file-provider configuration, cron, watchers, and background synchronization.
+- Attempt best-effort cleanup of legacy managed records and generated proxy
+  files before replacing an older package.
+
 ## 2026.07.21
 
 - Add optional, portless HTTP routing through a user-managed Caddy v2 or

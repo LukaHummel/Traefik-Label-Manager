@@ -1,6 +1,0 @@
-#!/bin/bash
-/usr/local/emhttp/plugins/docker.dns/scripts/install-cron.sh
-if docker info >/dev/null 2>&1; then
-  /usr/local/emhttp/plugins/docker.dns/scripts/service.sh start
-fi
-

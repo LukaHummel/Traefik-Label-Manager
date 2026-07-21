@@ -3,12 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run --coverage=false",
-    "php:parse": "node scripts/php-syntax-check.mjs"
+    "test": "vitest run --coverage=false"
   },
   "devDependencies": {
     "jsdom": "^26.1.0",
-    "php-parser": "^3.7.0",
     "vitest": "^3.2.4"
   }
 }

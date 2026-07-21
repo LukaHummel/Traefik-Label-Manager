@@ -1,9 +1,13 @@
 #traefik-label-manager-row .traefik-label-manager-controls {
   display: grid;
-  grid-template-columns: minmax(9rem, auto) minmax(16rem, 1fr) minmax(12rem, 18rem);
+  grid-template-columns: max-content minmax(16rem, 32rem) minmax(12rem, 18rem);
   align-items: end;
+  justify-content: start;
+  max-width: 68rem;
   gap: .75rem;
 }
+#traefik-label-manager-row .traefik-label-manager-controls > label { min-width: 0; margin: 0; }
+#traefik-label-manager-row .traefik-label-manager-controls > label:first-child { padding-bottom: .5rem; white-space: nowrap; }
 #traefik-label-manager-row .traefik-label-manager-controls label > span {
   display: block;
   margin-bottom: .25rem;
@@ -15,6 +19,7 @@
 #traefik-label-manager-row .traefik-label-manager-help,
 #traefik-label-manager-row .traefik-label-manager-error { display: block; margin-top: .45rem; font-size: .82rem; }
 #traefik-label-manager-row .traefik-label-manager-error { color: #d9534f; }
+#traefik-label-manager-row .traefik-label-manager-help-warning { color: #d86e15; }
 
 @media (max-width: 850px) {
   #traefik-label-manager-row .traefik-label-manager-controls { grid-template-columns: 1fr; align-items: stretch; }

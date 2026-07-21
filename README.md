@@ -86,12 +86,18 @@ previous running state.
 
 Containers without an Unraid user template are shown read-only.
 
+For an unmanaged container, **Enable Route** stages the same default labels as
+the Add/Update Container form: a normalized `<container>.home.arpa` hostname,
+deterministic router and service identifier, ownership markers, and the
+preferred published backend port. Review the generated values, then use
+**Save Template** or **Apply & Restart**.
+
 ## Development
 
 ```bash
 npm ci
 ./test.sh
-./build.sh 2026.07.21.3 1
+./build.sh 2026.07.21.4 1
 ```
 
 Build output is written to `dist/`. Building requires Docker because the TXZ is

@@ -186,7 +186,7 @@
       '<label><input id="traefik-label-manager-enabled" type="checkbox"> Enable route</label>' +
       '<label><span>Hostname</span><input id="traefik-label-manager-hostname" type="text" autocomplete="off" spellcheck="false"></label>' +
       '<label><span>Backend port</span><select id="traefik-label-manager-port"></select></label></div>' +
-      '<span class="traefik-label-manager-help">Creates plugin-owned Traefik Docker labels when you click Apply.</span>' +
+      '<span id="traefik-label-manager-help" class="traefik-label-manager-help">Creates plugin-owned Traefik Docker labels when you click Apply.</span>' +
       '<span id="traefik-label-manager-error" class="traefik-label-manager-error" hidden></span></dd>';
     if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(row, anchor.nextSibling);
     else form.insertBefore(row, form.firstChild);
@@ -194,6 +194,8 @@
     var enabled = row.querySelector('#traefik-label-manager-enabled');
     var hostname = row.querySelector('#traefik-label-manager-hostname');
     var port = row.querySelector('#traefik-label-manager-port');
+    var help = row.querySelector('#traefik-label-manager-help');
+    var controlsTouched = false;
     enabled.checked = !!oldId;
     hostname.value = initialHost || automaticHostname(initialName);
 
@@ -216,6 +218,10 @@
         port.appendChild(option);
       }
       enabled.disabled = !available.length && !enabled.checked;
+      enabled.title = available.length ? '' : 'Add a published TCP port before enabling this route.';
+      help.textContent = available.length ? 'Creates plugin-owned Traefik Docker labels when you click Apply.' :
+        'Add a published TCP port before enabling this route.';
+      help.classList.toggle('traefik-label-manager-help-warning', !available.length);
       refreshDisabled();
     }
 
@@ -225,16 +231,53 @@
       clearError(row);
     }
 
-    enabled.addEventListener('change', refreshDisabled);
-    hostname.addEventListener('input', function () { hostnameWasAutomatic = false; clearError(row); });
+    enabled.addEventListener('change', function () { controlsTouched = true; refreshDisabled(); });
+    hostname.addEventListener('input', function () { controlsTouched = true; hostnameWasAutomatic = false; clearError(row); });
+    port.addEventListener('change', function () { controlsTouched = true; clearError(row); });
     nameInput.addEventListener('input', function () {
       if (hostnameWasAutomatic) hostname.value = automaticHostname(nameInput.value);
       clearError(row);
     });
-    form.addEventListener('change', function (event) {
+    function handleConfigChange(event) {
       if (event.target === enabled || event.target === hostname || event.target === port) return;
       if (event.target && /^conf(?:Type|Target|Value|Mode)\[\]$/.test(event.target.name || '')) refreshPorts(null);
-    });
+    }
+    form.addEventListener('change', handleConfigChange);
+    form.addEventListener('input', handleConfigChange);
+
+    function syncLateConfig() {
+      var preferred = null;
+      if (!controlsTouched) {
+        var currentLabels = labelMap(form);
+        var currentId = currentLabels[MARKER] && currentLabels[MARKER][0] ? currentLabels[MARKER][0].value : '';
+        if (currentId) {
+          var ruleKey = ownedKeys(currentId)[0];
+          var savedHost = currentLabels[ruleKey] ? parseHostname(currentLabels[ruleKey][0].value) : '';
+          var portKey = ownedKeys(currentId)[2];
+          preferred = currentLabels[portKey] ? parseInt(currentLabels[portKey][0].value, 10) : null;
+          enabled.checked = true;
+          hostname.value = savedHost || automaticHostname(nameInput.value);
+          hostnameWasAutomatic = !savedHost || savedHost === automaticHostname(nameInput.value);
+        }
+      }
+      refreshPorts(preferred);
+    }
+
+    function containsConfigField(node) {
+      if (!node || node.nodeType !== 1 || row.contains(node)) return false;
+      return (node.matches && node.matches('[name^="conf"]')) ||
+        (node.querySelector && node.querySelector('[name^="conf"]'));
+    }
+
+    if (window.MutationObserver) {
+      new window.MutationObserver(function (mutations) {
+        var changed = mutations.some(function (mutation) {
+          return Array.from(mutation.addedNodes).some(containsConfigField) ||
+            Array.from(mutation.removedNodes).some(containsConfigField);
+        });
+        if (changed) syncLateConfig();
+      }).observe(form, {childList: true, subtree: true});
+    }
     refreshPorts(initialPort);
 
     function reconcile() {

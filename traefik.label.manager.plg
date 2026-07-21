@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "traefik.label.manager">
 <!ENTITY author "Luka Hummel">
-<!ENTITY version "2026.07.21.3">
+<!ENTITY version "2026.07.21.4">
 <!ENTITY build "1">
 <!ENTITY package "&name;-&version;-noarch-&build;.txz">
 <!ENTITY pluginDir "/boot/config/plugins/&name;">
@@ -10,6 +10,12 @@
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="Settings/traefik.label.manager.settings" pluginURL="https://github.com/LukaHummel/Traefik-Label-Manager/releases/latest/download/traefik.label.manager.plg" icon="globe" min="7.0" support="https://github.com/LukaHummel/Traefik-Label-Manager/issues" project="https://github.com/LukaHummel/Traefik-Label-Manager" readme="https://github.com/LukaHummel/Traefik-Label-Manager#readme">
 <CHANGES>
+###2026.07.21.4
+- Fixed late-loaded Unraid port fields leaving route controls disabled
+- Restored managed route values when template fields load asynchronously
+- Compacted and left-aligned the container-form controls
+- Added Settings-page route enablement with automatic hostname and backend defaults
+
 ###2026.07.21.3
 - Made container label editors expandable and collapsed by default
 - Made template value fields compact, full-width, and auto-growing
@@ -28,7 +34,7 @@
 </CHANGES>
 <FILE Name="&pluginDir;/&package;" Run="upgradepkg --install-new">
   <URL>&packageUrl;</URL>
-  <MD5>28982079d9c19fa08388f14550cbe44a</MD5>
+  <MD5>39e8ae0e83a293688c4713f2432d63f9</MD5>
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>

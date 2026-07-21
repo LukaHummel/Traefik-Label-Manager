@@ -2,6 +2,9 @@
   'use strict';
 
   var API = '/plugins/traefik.label.manager/include/Api.php';
+  var MARKER = 'io.github.lukahummel.traefik-label-manager.router';
+  var OWNS_ENABLE = 'io.github.lukahummel.traefik-label-manager.owns-enable';
+  var ENABLE = 'traefik.enable';
   var list = document.getElementById('tlm-containers');
   var message = document.getElementById('tlm-page-message');
   var modal = document.getElementById('tlm-update-modal');
@@ -33,8 +36,35 @@
 
   function allowedKey(key) {
     return /^traefik\.[a-z0-9](?:[a-z0-9_.-]*[a-z0-9])?$/.test(key) ||
-      key === 'io.github.lukahummel.traefik-label-manager.router' ||
-      key === 'io.github.lukahummel.traefik-label-manager.owns-enable';
+      key === MARKER || key === OWNS_ENABLE;
+  }
+
+  function normalizedLabel(name) {
+    return String(name || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-')
+      .replace(/^-+|-+$/g, '').slice(0, 63).replace(/-+$/g, '');
+  }
+
+  function fnv1a(value) {
+    var hash = 0x811c9dc5;
+    var source = String(value || '').toLowerCase();
+    for (var index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return ('00000000' + hash.toString(16)).slice(-8);
+  }
+
+  function routerId(name) {
+    var slug = normalizedLabel(name).slice(0, 40).replace(/-+$/g, '');
+    return slug ? 'tlm-' + slug + '-' + fnv1a(name) : '';
+  }
+
+  function ownedKeys(id) {
+    return [
+      'traefik.http.routers.' + id + '.rule',
+      'traefik.http.routers.' + id + '.service',
+      'traefik.http.services.' + id + '.loadbalancer.server.port'
+    ];
   }
 
   function resizeValue(value) {
@@ -96,6 +126,38 @@
       labels.push({key: key, value: value});
     });
     return labels;
+  }
+
+  function addDefaultRoute(container, card, tableBody, routeButton) {
+    try {
+      var existing = collectLabels(card);
+      var labels = {};
+      existing.forEach(function (label) { labels[label.key] = label.value; });
+      var id = routerId(container.name);
+      var backendPort = parseInt(container.default_backend_port, 10);
+      if (!id) throw new Error('A route cannot be generated for this container name.');
+      if (!(backendPort > 0 && backendPort <= 65535)) throw new Error('Add a published TCP port before enabling this route.');
+      if (labels[ENABLE] && labels[ENABLE] !== 'true') throw new Error('traefik.enable already exists with a value other than true.');
+      var keys = ownedKeys(id);
+      var conflicts = keys.filter(function (key) { return Object.prototype.hasOwnProperty.call(labels, key); });
+      if (conflicts.length) throw new Error('Existing labels conflict with the generated route: ' + conflicts.join(', '));
+      var additions = [];
+      var needsEnable = !Object.prototype.hasOwnProperty.call(labels, ENABLE);
+      if (needsEnable) additions.push({key: ENABLE, value: 'true'});
+      additions.push({key: MARKER, value: id});
+      if (needsEnable) additions.push({key: OWNS_ENABLE, value: 'true'});
+      additions.push({key: keys[0], value: 'Host(`' + normalizedLabel(container.name) + '.home.arpa`)'});
+      additions.push({key: keys[1], value: id});
+      additions.push({key: keys[2], value: String(backendPort)});
+      additions.forEach(function (label) {
+        addLabelRow(tableBody, {key: label.key, template_value: label.value, active_value: null, pending: true}, true);
+      });
+      routeButton.disabled = true;
+      routeButton.textContent = 'Route defaults added';
+      setMessage('Default route added for ' + container.name + '. Save the template or use Apply & Restart.', false);
+    } catch (error) {
+      setMessage(error.message, true);
+    }
   }
 
   function saveTemplate(container, card) {
@@ -177,11 +239,19 @@
     content.appendChild(tableWrap);
 
     var actions = element('div', 'tlm-container-actions');
-    var add = element('button', '', 'Add label');
+    var managedRoute = container.labels.some(function (label) {
+      return label.key === MARKER && (label.template_value !== null || label.active_value !== null);
+    });
+    var route = element('button', 'tlm-route-defaults', managedRoute ? 'Route enabled' : 'Enable Route');
+    route.type = 'button';
+    route.disabled = !container.template_found || managedRoute || !container.default_backend_port;
+    if (!container.default_backend_port) route.title = 'Add a published TCP port before enabling this route.';
+    route.addEventListener('click', function () { addDefaultRoute(container, card, body, route); });
+    var add = element('button', 'tlm-add-label', 'Add label');
     add.type = 'button';
     add.disabled = !container.template_found;
     add.addEventListener('click', function () { addLabelRow(body, null, true); });
-    var save = element('button', '', 'Save Template');
+    var save = element('button', 'tlm-save-template', 'Save Template');
     save.type = 'button';
     save.disabled = !container.template_found;
     save.addEventListener('click', function () { saveTemplate(container, card).then(load).catch(function () {}); });
@@ -194,7 +264,7 @@
         saveTemplate(container, card).then(function () { openUpdater(container.name); }).catch(function () {});
       });
     });
-    [add, save, apply].forEach(function (button) { actions.appendChild(button); });
+    [route, add, save, apply].forEach(function (button) { actions.appendChild(button); });
     content.appendChild(actions);
     card.appendChild(content);
     return card;

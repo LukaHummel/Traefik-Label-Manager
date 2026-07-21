@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026.07.21.4
+
+- Detect port and label fields that Unraid adds after the integration loads.
+- Restore existing managed-route values from asynchronously loaded fields.
+- Explain when a genuinely portless container cannot enable a route.
+- Compact and left-align the container-form controls.
+- Add a Settings-page Enable Route action with the same automatic hostname,
+  router identifier, ownership labels, and preferred backend port as the container form.
+
 ## 2026.07.21.3
 
 - Make each container editor expandable and collapsed by default.

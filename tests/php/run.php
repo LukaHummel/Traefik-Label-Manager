@@ -27,6 +27,10 @@ $xml = <<<'XML'
 <Container version="2">
   <Name>plex</Name>
   <Repository>example/plex</Repository>
+  <WebUI>http://[IP]:[PORT:32400]/</WebUI>
+  <Config Name="HTTP" Target="80" Default="" Mode="tcp" Description="" Type="Port" Display="always" Required="false" Mask="false">8080</Config>
+  <Config Name="WebUI" Target="32400" Default="" Mode="tcp" Description="" Type="Port" Display="always" Required="false" Mask="false">32400</Config>
+  <Config Name="Discovery" Target="1900" Default="" Mode="udp" Description="" Type="Port" Display="always" Required="false" Mask="false">1900</Config>
   <Config Name="Manual" Target="manual.label" Default="" Mode="" Description="" Type="Label" Display="always" Required="false" Mask="false">keep</Config>
   <Config Name="Rule" Target="traefik.http.routers.plex.rule" Default="" Mode="" Description="" Type="Label" Display="always" Required="false" Mask="false">Host(`template.home.arpa`)</Config>
   <Config Name="Environment" Target="TZ" Default="" Mode="" Description="" Type="Variable" Display="always" Required="false" Mask="false">Europe/Berlin</Config>
@@ -74,6 +78,11 @@ assert_same([true, true, false, false], array_column($containers, 'is_traefik'),
 assert_same(false, $containers[0]['template_found'], 'A container without an Unraid template must be read-only.');
 assert_same(true, $containers[3]['pending'], 'Template and active label differences must be pending.');
 assert_same(2, count($containers[3]['labels']), 'Only Traefik labels must be returned.');
+assert_same([
+    ['public_port' => 8080, 'private_port' => 80],
+    ['public_port' => 32400, 'private_port' => 32400],
+], $containers[3]['published_ports'], 'Published TCP ports must be exposed to the Settings page in host-port order.');
+assert_same(32400, $containers[3]['default_backend_port'], 'The WebUI private port must be the default backend port.');
 
 $router = 'tlm-plex-1234abcd';
 $manager->save('plex', [

@@ -10,6 +10,7 @@ function response(body, ok = true) {
 function container(overrides = {}) {
   return {
     name: 'plex', running: true, status: 'running', template_found: true, pending: true,
+    published_ports: [{public_port: 8080, private_port: 80}], default_backend_port: 80,
     labels: [{key: 'traefik.enable', template_value: 'true', active_value: 'false', pending: true}],
     ...overrides
   };
@@ -79,7 +80,7 @@ describe('Traefik Label Manager settings page', () => {
     window.fetch.mockImplementationOnce(() => response({ok: true, container: 'plex', labels: {}}));
     window.fetch.mockImplementationOnce(() => response({ok: true, containers: [container({pending: false})]}));
     card.querySelector('.tlm-label-value').value = 'true';
-    card.querySelectorAll('.tlm-container-actions button')[1].click();
+    card.querySelector('.tlm-save-template').click();
     await new Promise(resolve => window.setTimeout(resolve, 0));
     const call = window.fetch.mock.calls[1];
     const payload = JSON.parse(call[1].body);
@@ -90,7 +91,7 @@ describe('Traefik Label Manager settings page', () => {
   it('rejects label keys outside the editable namespaces in the browser', async () => {
     const card = await load();
     card.querySelector('.tlm-label-key').value = 'manual.label';
-    card.querySelectorAll('.tlm-container-actions button')[1].click();
+    card.querySelector('.tlm-save-template').click();
     await new Promise(resolve => window.setTimeout(resolve, 0));
     expect(window.fetch).toHaveBeenCalledTimes(1);
     expect(document.getElementById('tlm-page-message').textContent).toContain('Only traefik.*');
@@ -104,6 +105,25 @@ describe('Traefik Label Manager settings page', () => {
     await new Promise(resolve => window.setTimeout(resolve, 0));
     expect(document.getElementById('tlm-update-modal').hidden).toBe(false);
     expect(document.getElementById('tlm-update-frame').getAttribute('src')).toContain('CreateDocker.php?updateContainer=true&ct[]=plex');
+  });
+
+  it('generates the same default route labels from the Settings page', async () => {
+    const card = await load([container({name: 'Plex Media', pending: false, labels: [],
+      published_ports: [{public_port: 32400, private_port: 32400}], default_backend_port: 32400})]);
+    card.querySelector('.tlm-route-defaults').click();
+    const keys = [...card.querySelectorAll('.tlm-label-key')];
+    const values = [...card.querySelectorAll('.tlm-label-value')];
+    const labels = Object.fromEntries(keys.map((key, index) => [key.value, values[index].value]));
+    const id = 'tlm-plex-media-9b92ff80';
+    expect(labels).toEqual({
+      'traefik.enable': 'true',
+      'io.github.lukahummel.traefik-label-manager.router': id,
+      'io.github.lukahummel.traefik-label-manager.owns-enable': 'true',
+      [`traefik.http.routers.${id}.rule`]: 'Host(`plex-media.home.arpa`)',
+      [`traefik.http.routers.${id}.service`]: id,
+      [`traefik.http.services.${id}.loadbalancer.server.port`]: '32400'
+    });
+    expect(document.getElementById('tlm-page-message').textContent).toContain('Default route added');
   });
 
   it('renders label contents as text rather than markup', async () => {

@@ -92,6 +92,32 @@ describe('Traefik container form integration', () => {
     expect(document.getElementById('traefik-label-manager-port').value).toBe('8080');
   });
 
+  it('detects published ports that Unraid adds after the form integration loads', async () => {
+    const form = await load();
+    const checkbox = document.getElementById('traefik-label-manager-enabled');
+    expect(checkbox.disabled).toBe(true);
+    form.insertAdjacentHTML('beforeend', config('Port', '32400', '32400', 'tcp'));
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+    expect(checkbox.disabled).toBe(false);
+    expect(document.getElementById('traefik-label-manager-port').value).toBe('32400');
+    expect(document.getElementById('traefik-label-manager-port').selectedOptions[0].textContent).toBe('32400 → 32400/tcp');
+  });
+
+  it('restores a managed route that Unraid adds after the integration loads', async () => {
+    const form = await load();
+    const id = routeId('plex');
+    form.insertAdjacentHTML('beforeend', [
+      config('Port', '80', '8080', 'tcp'),
+      config('Label', MARKER, id),
+      config('Label', `traefik.http.routers.${id}.rule`, 'Host(`media.home.arpa`)'),
+      config('Label', `traefik.http.services.${id}.loadbalancer.server.port`, '80')
+    ].join(''));
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+    expect(document.getElementById('traefik-label-manager-enabled').checked).toBe(true);
+    expect(document.getElementById('traefik-label-manager-hostname').value).toBe('media.home.arpa');
+    expect(document.getElementById('traefik-label-manager-port').value).toBe('80');
+  });
+
   it('creates the exact managed label set without network requests', async () => {
     const form = await load({configs: [config('Port', '80', '8080', 'tcp'), config('Label', 'manual.label', 'kept')]});
     enableRoute();
@@ -131,6 +157,8 @@ describe('Traefik container form integration', () => {
     const form = await load({configs: [config('Port', '53', '53', 'udp')]});
     const checkbox = document.getElementById('traefik-label-manager-enabled');
     expect(checkbox.disabled).toBe(true);
+    expect(checkbox.title).toContain('published TCP port');
+    expect(document.getElementById('traefik-label-manager-help').textContent).toContain('published TCP port');
     checkbox.disabled = false;
     enableRoute();
     expect(form.onsubmit()).toBe(false);

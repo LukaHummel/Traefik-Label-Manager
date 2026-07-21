@@ -27,4 +27,7 @@ Use **Save Template** for a non-disruptive template update. Use **Apply &
 Restart** to save and invoke Unraid's container updater so the labels become
 active. A normal Docker restart does not change container labels.
 
+For an unmanaged container, **Enable Route** stages the automatic
+`<container>.home.arpa` route and preferred published backend port before save.
+
 Full documentation: https://github.com/LukaHummel/Traefik-Label-Manager#readme

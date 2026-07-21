@@ -55,6 +55,7 @@ final class LabelManager
             $active = $this->filterLabels((array)($inspect['Config']['Labels'] ?? []));
             $templatePath = $templates[$name] ?? null;
             $template = $templatePath !== null ? $this->readTemplateLabels($templatePath) : [];
+            $portConfiguration = $templatePath !== null ? $this->readTemplatePorts($templatePath) : ['ports' => [], 'default' => null];
             $keys = array_values(array_unique(array_merge(array_keys($template), array_keys($active))));
             sort($keys, SORT_STRING);
             $labels = [];
@@ -75,6 +76,8 @@ final class LabelManager
                 'is_traefik' => $isTraefik,
                 'template_found' => $templatePath !== null,
                 'pending' => $templatePath !== null && $template !== $active,
+                'published_ports' => $portConfiguration['ports'],
+                'default_backend_port' => $portConfiguration['default'],
                 'labels' => $labels,
             ];
         }
@@ -154,6 +157,36 @@ final class LabelManager
         }
         ksort($labels, SORT_STRING);
         return $labels;
+    }
+
+    /** @return array{ports:list<array{public_port:int,private_port:int}>,default:?int} */
+    private function readTemplatePorts(string $path): array
+    {
+        $document = $this->loadDocument($path);
+        $xpath = new DOMXPath($document);
+        $ports = [];
+        foreach ($xpath->query('//Config[@Type="Port"]') ?: [] as $node) {
+            if (!$node instanceof DOMElement || strtolower($node->getAttribute('Mode')) === 'udp') continue;
+            $privatePort = filter_var($node->getAttribute('Target'), FILTER_VALIDATE_INT);
+            $publicPort = filter_var(trim($node->textContent), FILTER_VALIDATE_INT);
+            if ($privatePort === false || $publicPort === false || $privatePort < 1 || $privatePort > 65535 || $publicPort < 1 || $publicPort > 65535) continue;
+            $ports[] = ['public_port' => $publicPort, 'private_port' => $privatePort];
+        }
+        usort($ports, static fn(array $left, array $right): int =>
+            $left['public_port'] <=> $right['public_port'] ?: $left['private_port'] <=> $right['private_port']);
+        $default = null;
+        $webUi = (string)$document->getElementsByTagName('WebUI')->item(0)?->textContent;
+        if (preg_match('/\[PORT:(\d+)\]/i', $webUi, $match)) {
+            $requested = (int)$match[1];
+            foreach ($ports as $port) {
+                if ($port['private_port'] === $requested) {
+                    $default = $requested;
+                    break;
+                }
+            }
+        }
+        if ($default === null && $ports !== []) $default = $ports[0]['private_port'];
+        return ['ports' => $ports, 'default' => $default];
     }
 
     /** @return array<string,string> */

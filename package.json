@@ -8,5 +8,6 @@
   "devDependencies": {
     "jsdom": "^26.1.0",
     "vitest": "^3.2.4"
-  }
+  },
+  "packageManager": "pnpm@11.7.0"
 }

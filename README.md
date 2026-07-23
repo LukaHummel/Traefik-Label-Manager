@@ -99,7 +99,7 @@ preferred published backend port. Review the generated values, then use
 ## Development
 
 ```bash
-npm ci
+pnpm install --frozen-lockfile
 ./test.sh
 ./build.sh 2026.07.21.5 1
 ```

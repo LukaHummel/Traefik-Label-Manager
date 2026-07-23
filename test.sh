@@ -63,4 +63,4 @@ else
   echo 'php is unavailable; PHP checks were not run.' >&2
 fi
 
-if [[ -d node_modules ]]; then npm test; else echo 'node_modules is absent; run npm ci to execute Vitest.' >&2; fi
+if [[ -d node_modules ]]; then pnpm test; else echo 'node_modules is absent; run pnpm install --frozen-lockfile to execute Vitest.' >&2; fi

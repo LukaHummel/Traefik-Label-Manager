@@ -27,6 +27,12 @@ if grep -F -q 'Type="xmenu"' source/traefik.label.manager/traefik.label.manager.
   echo 'The settings page must render as a normal Network Services child page.' >&2
   exit 1
 fi
+grep -F -q 'Menu="Buttons:99"' source/traefik.label.manager/TraefikLabelManagerIntegration.page
+grep -F -q 'Link="nav-user"' source/traefik.label.manager/TraefikLabelManagerIntegration.page
+if grep -Eq '^(Title|Icon)=' source/traefik.label.manager/TraefikLabelManagerIntegration.page; then
+  echo 'The global integration page must not create a sidebar utility item.' >&2
+  exit 1
+fi
 grep -F -q 'launch="Settings/traefik.label.manager.settings"' traefik.label.manager.plg
 grep -F -q '/boot/config/plugins/dockerMan/templates-user' source/traefik.label.manager/include/bootstrap.php
 
